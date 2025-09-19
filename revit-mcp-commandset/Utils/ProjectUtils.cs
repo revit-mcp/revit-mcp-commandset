@@ -893,36 +893,6 @@ namespace RevitMCPCommandSet.Utils
                 .FirstOrDefault();
         }
 
-        ///// <summary>
-        ///// 刷新视图并添加延迟
-        ///// </summary>
-        //public static void Refresh(this Document doc, int waitingTime = 0, bool allowOperation = true)
-        //{
-        //    UIApplication uiApp = new UIApplication(doc.Application);
-        //    UIDocument uiDoc = uiApp.ActiveUIDocument;
-
-        //    // 检查文档是否可修改
-        //    if (uiDoc.Document.IsModifiable)
-        //    {
-        //        // 更新模型
-        //        uiDoc.Document.Regenerate();
-        //    }
-        //    // 更新界面
-        //    uiDoc.RefreshActiveView();
-
-        //    // 延迟等待
-        //    if (waitingTime != 0)
-        //    {
-        //        System.Threading.Thread.Sleep(waitingTime);
-        //    }
-
-        //    // 允许用户进行非安全操作
-        //    if (allowOperation)
-        //    {
-        //        System.Windows.Forms.Application.DoEvents();
-        //    }
-        //}
-
         /// <summary>
         /// 将指定的消息保存到桌面的指定文件中（默认覆盖文件）
         /// </summary>
