@@ -38,14 +38,24 @@
       "description": "Deletes elements using ElementId",
       "assemblyPath": "RevitMCPCommandSet.dll"
     },
-	{
+    {
       "commandName": "tag_all_walls",
       "description": "Tag all the walls in the model",
       "assemblyPath": "RevitMCPCommandSet.dll"
     },
-	{
+    {
       "commandName": "create_line_based_element",
       "description": "Create line based element such as wall",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "get_family_creation_suggestion",
+      "description": "Get parameter requirements for creating a family instance",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "create_family_instance",
+      "description": "Create a family instance with specified parameters",
       "assemblyPath": "RevitMCPCommandSet.dll"
     }
   ]
