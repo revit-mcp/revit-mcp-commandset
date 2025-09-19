@@ -2,10 +2,9 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RevitMCPCommandSet.Models.Geometry;
-using RevitMCPCommandSet.Services;
 using RevitMCPSDK.API.Base;
 
-namespace RevitMCPCommandSet.Commands
+namespace RevitMCPCommandSet.Features.ElementCreation
 {
     public class CreatePointElementCommand : ExternalEventCommandBase
     {

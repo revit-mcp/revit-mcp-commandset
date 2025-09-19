@@ -2,10 +2,9 @@
 using RevitMCPSDK.API.Interfaces;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPCommandSet.Utils;
-using RevitMCPCommandSet.Commands;
 using RevitMCPCommandSet.Models.Geometry;
 
-namespace RevitMCPCommandSet.Services
+namespace RevitMCPCommandSet.Features.ElementCreation
 {
     public class CreatePointElementEventHandler : IExternalEventHandler, IWaitableExternalEventHandler
     {

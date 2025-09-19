@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RevitMCPCommandSet.Services
+namespace RevitMCPCommandSet.Features.ElementOperation
 {
     public class OperateElementEventHandler : IExternalEventHandler, IWaitableExternalEventHandler
     {

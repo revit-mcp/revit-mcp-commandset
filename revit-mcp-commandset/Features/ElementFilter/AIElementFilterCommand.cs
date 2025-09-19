@@ -2,14 +2,13 @@
 using Newtonsoft.Json.Linq;
 using RevitMCPSDK.API.Base;
 using RevitMCPCommandSet.Models.Common;
-using RevitMCPCommandSet.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RevitMCPCommandSet.Commands
+namespace RevitMCPCommandSet.Features.ElementFilter
 {
     public class AIElementFilterCommand : ExternalEventCommandBase
     {
@@ -38,7 +37,7 @@ namespace RevitMCPCommandSet.Commands
                 data = parameters["data"].ToObject<FilterSetting>();
                 if (data == null)
                     throw new ArgumentNullException(nameof(data), "AI传入数据为空");
-
+                
                 // 设置AI过滤器参数
                 _handler.SetParameters(data);
 

@@ -1,22 +1,10 @@
-﻿using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.Architecture;
-using Autodesk.Revit.DB.Mechanical;
+﻿using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.UI;
-using Newtonsoft.Json;
-using RevitMCPSDK.API.Interfaces;
 using RevitMCPCommandSet.Models.Common;
-using RevitMCPCommandSet.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 using RevitMCPCommandSet.Models.Geometry;
+using RevitMCPSDK.API.Interfaces;
 
-namespace RevitMCPCommandSet.Services
+namespace RevitMCPCommandSet.Features.ElementFilter
 {
     public class AIElementFilterEventHandler : IExternalEventHandler, IWaitableExternalEventHandler
     {
@@ -201,7 +189,7 @@ namespace RevitMCPCommandSet.Services
             }
 
             // 创建过滤器列表
-            List<ElementFilter> filters = new List<ElementFilter>();
+            List<Autodesk.Revit.DB.ElementFilter> filters = new List<Autodesk.Revit.DB.ElementFilter>();
             // 1. 类别过滤器
             if (!string.IsNullOrWhiteSpace(settings.FilterCategory))
             {
@@ -289,7 +277,7 @@ namespace RevitMCPCommandSet.Services
             // 应用组合过滤器
             if (filters.Count > 0)
             {
-                ElementFilter combinedFilter = filters.Count == 1
+                Autodesk.Revit.DB.ElementFilter combinedFilter = filters.Count == 1
                     ? filters[0]
                     : new LogicalAndFilter(filters);
                 collector = collector.WherePasses(combinedFilter);

@@ -2,14 +2,13 @@
 using Newtonsoft.Json.Linq;
 using RevitMCPSDK.API.Base;
 using RevitMCPCommandSet.Models.Common;
-using RevitMCPCommandSet.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RevitMCPCommandSet.Commands
+namespace RevitMCPCommandSet.Features.ElementOperation
 {
     public class OperateElementCommand : ExternalEventCommandBase
     {
