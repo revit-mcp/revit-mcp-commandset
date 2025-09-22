@@ -117,12 +117,10 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
             {
                 TypeId = symbol.Id.IntegerValue,
                 FamilyName = symbol.FamilyName,
-                SchemaVersion = FamilyCreationDefaults.SchemaVersion,
                 Parameters = new Dictionary<string, ParameterInfo>()
             };
 
             var placementType = symbol.Family.FamilyPlacementType;
-            requirements.PlacementType = placementType.ToString();
 
             // 根据族放置类型添加参数要求
             switch (placementType)
@@ -429,14 +427,12 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
             {
                 Required = true,
                 Description = "放置点坐标(mm)",
-                Example = new { x = 2000.0, y = 1500.0, z = 0.0 }
             };
 
             requirements.Parameters["baseLevelId"] = new ParameterInfo
             {
                 Required = false,
                 Description = "基准标高的ElementId",
-                Example = 12345,
                 Default = -1
             };
 
@@ -444,7 +440,6 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
             {
                 Required = false,
                 Description = "相对基准标高的偏移(mm)",
-                Example = 1000.0,
                 Default = FamilyCreationDefaults.BaseOffset
             };
 
@@ -452,7 +447,6 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
             {
                 Required = false,
                 Description = "是否自动查找最近标高",
-                Example = true,
                 Default = FamilyCreationDefaults.AutoFindLevel
             };
         }
@@ -465,7 +459,6 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
             {
                 Required = false,
                 Description = "是否自动查找宿主元素",
-                Example = true,
                 Default = FamilyCreationDefaults.AutoFindHost
             };
 
@@ -473,7 +466,6 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
             {
                 Required = false,
                 Description = "自动查找宿主的搜索半径(mm)",
-                Example = 1000.0,
                 Default = FamilyCreationDefaults.SearchRadius
             };
 
@@ -481,7 +473,6 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
             {
                 Required = false,
                 Description = "宿主类别过滤",
-                Example = new[] { "OST_Walls", "OST_Floors" },
                 Default = FamilyCreationDefaults.DefaultHostCategories
             };
 
@@ -489,7 +480,6 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
             {
                 Required = false,
                 Description = "指定宿主元素的ElementId",
-                Example = 67890,
                 Default = -1
             };
         }
@@ -502,14 +492,12 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
             {
                 Required = true,
                 Description = "顶部标高的ElementId",
-                Example = 54321
             };
 
             requirements.Parameters["topOffset"] = new ParameterInfo
             {
                 Required = false,
                 Description = "相对顶部标高的偏移(mm)",
-                Example = 0.0,
                 Default = FamilyCreationDefaults.TopOffset
             };
         }
@@ -520,42 +508,36 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
             {
                 Required = true,
                 Description = "放置点坐标（毫米）",
-                Example = new { x = 2000.0, y = 1500.0, z = 1000.0 }
             };
 
             requirements.Parameters["faceDirection"] = new ParameterInfo
             {
                 Required = true,
                 Description = "面法向量（标准化）",
-                Example = new { x = 0.0, y = 0.0, z = 1.0 }
             };
 
             requirements.Parameters["handDirection"] = new ParameterInfo
             {
                 Required = true,
                 Description = "手向量（标准化）",
-                Example = new { x = 1.0, y = 0.0, z = 0.0 }
             };
 
             requirements.Parameters["autoFindHost"] = new ParameterInfo
             {
                 Required = false,
                 Description = "是否自动查找宿主面",
-                Example = true
             };
 
             requirements.Parameters["searchRadius"] = new ParameterInfo
             {
                 Required = false,
                 Description = "自动查找宿主的搜索半径（毫米）",
-                Example = 5000.0
             };
 
             requirements.Parameters["hostCategories"] = new ParameterInfo
             {
                 Required = false,
                 Description = "宿主类别过滤",
-                Example = new[] { "OST_Walls", "OST_Floors", "OST_Ceilings" }
             };
         }
 
@@ -565,21 +547,18 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
             {
                 Required = true,
                 Description = "线性路径（毫米）",
-                Example = new { p0 = new { x = 0.0, y = 0.0, z = 0.0 }, p1 = new { x = 5000.0, y = 0.0, z = 0.0 } }
             };
 
             requirements.Parameters["baseLevelId"] = new ParameterInfo
             {
                 Required = true,
                 Description = "基准标高的ElementId",
-                Example = 12345
             };
 
             requirements.Parameters["baseOffset"] = new ParameterInfo
             {
                 Required = false,
                 Description = "相对基准标高的偏移（毫米）",
-                Example = 0.0
             };
         }
 
@@ -589,14 +568,12 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
             {
                 Required = true,
                 Description = "放置点坐标（毫米）",
-                Example = new { x = 2000.0, y = 1500.0, z = 0.0 }
             };
 
             requirements.Parameters["viewId"] = new ParameterInfo
             {
                 Required = true,
                 Description = "目标2D视图的ElementId",
-                Example = 67890
             };
         }
 

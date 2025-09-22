@@ -19,17 +19,6 @@ namespace RevitMCPCommandSet.Models.Common
         [JsonProperty("familyName")]
         public string FamilyName { get; set; }
 
-        /// <summary>
-        /// 放置类型
-        /// </summary>
-        [JsonProperty("placementType")]
-        public string PlacementType { get; set; }
-
-        /// <summary>
-        /// 架构版本
-        /// </summary>
-        [JsonProperty("schemaVersion")]
-        public int SchemaVersion { get; set; } = 1;
 
         /// <summary>
         /// 统一参数字典（包含必需和可选参数）
@@ -66,11 +55,6 @@ namespace RevitMCPCommandSet.Models.Common
         [JsonProperty("description")]
         public string Description { get; set; }
 
-        /// <summary>
-        /// 示例值
-        /// </summary>
-        [JsonProperty("example")]
-        public object Example { get; set; }
 
         /// <summary>
         /// 默认值（仅可选参数使用）
