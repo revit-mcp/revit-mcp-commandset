@@ -1,4 +1,5 @@
-﻿using Autodesk.Revit.DB.Structure;
+﻿using System;
+using Autodesk.Revit.DB.Structure;
 
 namespace RevitMCPCommandSet.Utils.FamilyCreation
 {
@@ -276,7 +277,7 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
         {
             // 基本参数检查
             if (FamilySymbol == null)
-                System.Diagnostics.Trace.WriteLine($"[Error] 必要参数{typeof(FamilySymbol)} {nameof(FamilySymbol)}缺失！");
+                throw new ArgumentNullException(nameof(FamilySymbol));
 
             // 激活族模型
             if (!FamilySymbol.IsActive)
@@ -290,9 +291,7 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
                 // 基于单个标高的族（如：公制常规模型）
                 case FamilyPlacementType.OneLevelBased:
                     if (LocationPoint == null)
-                        System.Diagnostics.Trace.WriteLine($"[Error] 必要参数{typeof(XYZ)} {nameof(LocationPoint)}缺失！");
-                    //if (BaseLevel == null)
-                    //    System.Diagnostics.Trace.WriteLine($"[Error] 必要参数{typeof(Level)} {nameof(BaseLevel)}缺失！");
+                        throw new ArgumentNullException(nameof(LocationPoint));
 
                     if (BaseLevel != null)
                     {
@@ -335,11 +334,11 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
                 // 基于单个标高和主体的族（如：门、窗）
                 case FamilyPlacementType.OneLevelBasedHosted:
                     if (LocationPoint == null)
-                        System.Diagnostics.Trace.WriteLine($"[Error] 必要参数{typeof(XYZ)} {nameof(LocationPoint)}缺失！");
+                        throw new ArgumentNullException(nameof(LocationPoint));
                     // 自动查找最近的宿主元素
                     Element host = GetNearestHostElement(doc,LocationPoint, FamilySymbol);
                     if (host == null)
-                        System.Diagnostics.Trace.WriteLine($"[Error] 找不到合规的的宿主信息！");
+                        throw new InvalidOperationException("找不到合适的宿主元素");
                     // 布置方向由主体的创建方向决定
                     // 带标高信息
                     if (BaseLevel != null)
@@ -365,9 +364,11 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
                 // 基于两个标高的族（如：柱子）
                 case FamilyPlacementType.TwoLevelsBased:
                     if (LocationPoint == null)
-                        System.Diagnostics.Trace.WriteLine($"[Error] 必要参数{typeof(XYZ)} {nameof(LocationPoint)}缺失！");
+                        throw new ArgumentNullException(nameof(LocationPoint));
                     if (BaseLevel == null)
-                        System.Diagnostics.Trace.WriteLine($"[Error] 必要参数{typeof(Level)} {nameof(BaseLevel)}缺失！");
+                        throw new ArgumentNullException(nameof(BaseLevel));
+                    if (TopLevel == null)
+                        throw new ArgumentNullException(nameof(TopLevel));
                     // 判断是结构柱还是建筑柱
                     StructuralType structuralType = StructuralType.NonStructural;
                     if (FamilySymbol.Category.Id.IntegerValue == (int)BuiltInCategory.OST_StructuralColumns)
@@ -421,7 +422,9 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
                 // 族是视图专有的（例如，详图注释）
                 case FamilyPlacementType.ViewBased:
                     if (LocationPoint == null)
-                        System.Diagnostics.Trace.WriteLine($"[Error] 必要参数{typeof(XYZ)} {nameof(LocationPoint)}缺失！");
+                        throw new ArgumentNullException(nameof(LocationPoint));
+                    if (View == null)
+                        throw new ArgumentNullException(nameof(View));
                     instance = doc.Create.NewFamilyInstance(
                         LocationPoint,  // 族实例的原点。如果创建在平面视图（ViewPlan）上，该原点将被投影到平面视图上
                         FamilySymbol,   // 表示要插入的实例类型的族符号对象
@@ -431,19 +434,17 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
                 // 基于工作平面的族（如：基于面的公制常规模型，包括基于面、基于墙等）
                 case FamilyPlacementType.WorkPlaneBased:
                     if (LocationPoint == null)
-                        System.Diagnostics.Trace.WriteLine($"[Error] 必要参数{typeof(XYZ)} {nameof(LocationPoint)}缺失！");
+                        throw new ArgumentNullException(nameof(LocationPoint));
                     // 获取最近的宿主面
                     Reference hostFace = GetNearestFaceReference(doc,LocationPoint, 1000 / 304.8, HostCategories);
                     if (hostFace == null)
-                        System.Diagnostics.Trace.WriteLine($"[Error] 找不到合规的的宿主信息！");
+                        throw new InvalidOperationException("找不到合适的宿主面");
 
                     // 将点投影到宿主面上
                     XYZ projectedPoint = ProjectPointToFace(doc, LocationPoint, hostFace);
                     if (projectedPoint == null)
                     {
-                        System.Diagnostics.Trace.WriteLine($"[Error] 族实例创建失败：无法将点投影到宿主面上，原始点：{LocationPoint}");
-                        instance = null;
-                        break;
+                        throw new InvalidOperationException($"无法将点投影到宿主面上，原始点：{LocationPoint}");
                     }
                     if (HandDirection == null || HandDirection == XYZ.Zero)
                     {
@@ -461,28 +462,22 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
                     }
                     catch (Autodesk.Revit.Exceptions.ArgumentsInconsistentException ex)
                     {
-                        // 记录方向与面法线平行的错误
-                        System.Diagnostics.Trace.WriteLine($"[Error] 族实例创建失败：方向参数不一致 - {ex.Message}，原始点：{LocationPoint}");
-                        instance = null;
+                        throw new InvalidOperationException($"方向参数不一致 - {ex.Message}，原始点：{LocationPoint}", ex);
                     }
                     catch (Autodesk.Revit.Exceptions.InvalidOperationException ex)
                     {
-                        // 记录无法在面上创建族实例的错误
-                        System.Diagnostics.Trace.WriteLine($"[Error] 族实例创建失败：无法在面上创建族实例 - {ex.Message}，原始点：{LocationPoint}，投影点：{projectedPoint}");
-                        instance = null;
+                        throw new InvalidOperationException($"无法在面上创建族实例 - {ex.Message}，原始点：{LocationPoint}，投影点：{projectedPoint}", ex);
                     }
                     catch (Exception ex)
                     {
-                        // 记录其他未预期的错误
-                        System.Diagnostics.Trace.WriteLine($"[Error] 族实例创建失败：未知错误 - {ex.Message}，原始点：{LocationPoint}");
-                        instance = null;
+                        throw new InvalidOperationException($"族实例创建失败：{ex.Message}，原始点：{LocationPoint}", ex);
                     }
                     break;
 
                 // 基于线且在工作平面上的族（如：基于线的公制常规模型）
                 case FamilyPlacementType.CurveBased:
                     if (LocationLine == null)
-                        System.Diagnostics.Trace.WriteLine($"[Error] 必要参数{typeof(Line)} {nameof(LocationLine)}缺失！");
+                        throw new ArgumentNullException(nameof(LocationLine));
                     // 带标高信息
                     if (BaseLevel != null)
                     {
@@ -498,9 +493,8 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
                         // 获取最近的宿主面（不允许有误差）
                         Reference lineHostFace = GetNearestFaceReference(doc, LocationLine.Evaluate(0.5, true), 1e-5, HostCategories);
                         if (lineHostFace == null)
-                        { 
-                            System.Diagnostics.Trace.WriteLine($"[Error] 布置线不在最近的宿主面上！");
-                            break;
+                        {
+                            throw new InvalidOperationException("布置线不在最近的宿主面上");
                         }
                         instance = doc.Create.NewFamilyInstance(
                             lineHostFace,   // 对面的引用 
@@ -512,9 +506,9 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
                 // 基于线且在特定视图中的族（如：详图组件）
                 case FamilyPlacementType.CurveBasedDetail:
                     if (LocationLine == null)
-                        System.Diagnostics.Trace.WriteLine($"[Error] 必要参数{typeof(Line)} {nameof(LocationLine)}缺失！");
+                        throw new ArgumentNullException(nameof(LocationLine));
                     if (View == null)
-                        System.Diagnostics.Trace.WriteLine($"[Error] 必要参数{typeof(View)} {nameof(View)}缺失！");
+                        throw new ArgumentNullException(nameof(View));
                     instance = doc.Create.NewFamilyInstance(
                         LocationLine,   // 族实例的线位置。该线必须位于视图平面内
                         FamilySymbol,   // 表示要插入的实例类型的族符号对象
@@ -524,9 +518,9 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
                 // 结构曲线驱动的族（如：梁、支撑或斜柱）
                 case FamilyPlacementType.CurveDrivenStructural:
                     if (LocationLine == null)
-                        System.Diagnostics.Trace.WriteLine($"[Error] 必要参数{typeof(Line)} {nameof(LocationLine)}缺失！");
+                        throw new ArgumentNullException(nameof(LocationLine));
                     if (BaseLevel == null)
-                        System.Diagnostics.Trace.WriteLine($"[Error] 必要参数{typeof(Level)} {nameof(BaseLevel)}缺失！");
+                        throw new ArgumentNullException(nameof(BaseLevel));
                     instance = doc.Create.NewFamilyInstance(
                         LocationLine,                   // 族实例基于的曲线
                         FamilySymbol,                   // 一个FamilySymbol对象，表示要插入的实例的类型。请注意，此Symbol必须表示其 FamilyPlacementType 为 WorkPlaneBased 或 CurveBased 的族
