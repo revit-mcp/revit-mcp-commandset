@@ -1,72 +1,33 @@
 # Revit MCP CommandSet 开发待办清单
 
-## 高优先级命令 (High Priority)
+## 高优先级命令 (High Priority) ⭐⭐⭐⭐⭐
 
-### 1. 系统族通用创建命令 - `create_system_families`
-- **功能描述**: 支持系统族元素的智能创建（墙、楼板、屋顶、管道等）
-- **核心需求**:
-  - 基于几何路径创建墙体（直墙、弧墙、复合墙）
-  - 基于轮廓创建楼板、屋顶、天花板
-  - 管道、风管系统的智能路径创建
-  - 自动处理连接点和系统集成
-- **预估实现**: `Features/SystemElementCreation/` 模块
-- **优先级**: ⭐⭐⭐⭐⭐
+| 命令名称                        | 功能描述 | 预估实现模块 | 核心需求 |
+|-----------------------------|---------|-------------|----------|
+| `create_system_families`    | 系统族元素智能创建 | `Features/SystemElementCreation/` | 几何路径创建墙体、轮廓创建楼板屋顶、管道系统路径创建、连接点集成 |
+| `get_revit_status`          | Revit应用程序状态获取 | `Features/RevitStatus/` | 文档视图信息、项目状态、界面状态检测 |
+| `get_element_geometry_info` | 项目指定几何信息获取 | `Features/ElementGeometry/` | 可配置元素类型、指定几何信息提取、批量几何数据收集 |
 
-### 2. Revit状态获取命令 - `get_revit_status`
-- **功能描述**: 获取当前Revit应用程序运行状态
-- **核心需求**:
-  - 当前文档和视图信息
-  - 项目基本状态
-  - 界面状态检测
-- **预估实现**: `Features/RevitStatus/` 模块
-- **优先级**: ⭐⭐⭐⭐⭐
+## 中优先级命令 (Medium Priority) ⭐⭐⭐⭐
 
-### 3. 元素参数管理命令 - `manage_element_parameters`
-- **功能描述**: 元素参数完整CRUD操作
-- **核心需求**:
-  - 参数批量读写
-  - 参数分类管理
-  - 类型和实例参数处理
-- **预估实现**: `Features/ParameterManagement/` 模块
-- **优先级**: ⭐⭐⭐⭐
+| 命令名称 | 功能描述 | 预估实现模块 | 核心需求 |
+|---------|---------|-------------|----------|
+| `manage_element_parameters` | 元素参数CRUD操作 | `Features/ParameterManagement/` | 参数批量读写、分类管理、类型实例参数处理 |
+| `manage_family_library` | 族库资源管理 | `Features/FamilyLibrary/` | 族库搜索、类型管理、加载状态跟踪 |
 
-### 4. 族库资源管理命令 - `manage_family_library`
-- **功能描述**: 族资源的搜索、加载和管理
-- **核心需求**:
-  - 族库智能搜索
-  - 族类型管理
-  - 加载状态跟踪
-- **预估实现**: `Features/FamilyLibrary/` 模块
-- **优先级**: ⭐⭐⭐⭐
+## 中优先级命令 (Medium Priority) ⭐⭐⭐
 
-## 中优先级命令 (Medium Priority)
+| 命令名称 | 功能描述 | 预估实现模块 | 核心需求 |
+|---------|---------|-------------|----------|
+| `capture_view_screenshot` | 视图截图和可视化 | `Features/ViewCapture/` | 多格式支持、可配置分辨率、路径管理 |
+| `manage_views` | 视图创建和管理 | `Features/ViewManagement/` | 视图切换创建、属性配置、过滤器管理 |
 
-### 5. 视图截图命令 - `capture_view_screenshot`
-- **功能描述**: 视图截图和状态可视化
-- **核心需求**:
-  - 多格式截图支持
-  - 可配置分辨率
-  - 文件路径管理
-- **预估实现**: `Features/ViewCapture/` 模块
-- **优先级**: ⭐⭐⭐
+## 低优先级命令 (Low Priority) ⭐
 
-### 6. 视图管理命令 - `manage_views`
-- **功能描述**: 视图创建和管理
-- **核心需求**:
-  - 视图切换和创建
-  - 视图属性配置
-  - 过滤器管理
-- **优先级**: ⭐⭐
-
-## 低优先级命令 (Low Priority)
-
-### 7. 项目信息管理命令 - `manage_project_info`
-- **功能描述**: 项目基本信息管理
-- **优先级**: ⭐
-
-### 8. 材质管理命令 - `manage_materials`
-- **功能描述**: 材质属性管理
-- **优先级**: ⭐
+| 命令名称 | 功能描述 | 预估实现模块 | 核心需求 |
+|---------|---------|-------------|----------|
+| `manage_project_info` | 项目基本信息管理 | `Features/ProjectInfo/` | 项目属性读写、信息更新 |
+| `manage_materials` | 材质属性管理 | `Features/MaterialManagement/` | 材质创建修改、属性配置 |
 
 ## 命令命名规范
 - 命令名使用下划线分隔: `get_revit_status`
