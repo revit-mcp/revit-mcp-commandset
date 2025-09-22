@@ -3,7 +3,8 @@
     "allow": [
       "mcp__ide__getDiagnostics",
       "mcp__revit-mcp__ai_element_filter",
-      "mcp__revit-mcp__get_family_creation_suggestion"
+      "mcp__revit-mcp__get_family_creation_suggestion",
+      "mcp__revit-mcp__create_family_instance"
     ],
     "deny": [],
     "ask": []

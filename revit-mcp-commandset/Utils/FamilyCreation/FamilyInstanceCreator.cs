@@ -272,8 +272,8 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
         /// <summary>
         /// 执行创建族实例
         /// </summary>
-        /// <returns>创建的族实例，失败返回null</returns>
-        public FamilyInstance Create()
+        /// <returns>创建的族实例ElementId，失败抛出异常</returns>
+        public int Create()
         {
             // 基本参数检查
             if (FamilySymbol == null)
@@ -533,9 +533,13 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
                     throw new NotImplementedException("未实现FamilyPlacementType.Adaptive创建方法！");
 
                 default:
-                    break;
+                    throw new NotImplementedException($"未实现的族放置类型: {FamilySymbol.Family.FamilyPlacementType}");
             }
-            return instance;
+
+            if (instance == null)
+                throw new InvalidOperationException("族实例创建失败，返回null");
+
+            return instance.Id.IntegerValue;
         }
 
         #endregion
