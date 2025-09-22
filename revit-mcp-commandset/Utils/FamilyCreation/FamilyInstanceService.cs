@@ -4,6 +4,7 @@ using System.Linq;
 using Autodesk.Revit.DB;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPCommandSet.Models.Geometry;
+using RevitMCPCommandSet.Utils.FamilyCreation;
 
 namespace RevitMCPCommandSet.Utils.FamilyCreation
 {
@@ -116,11 +117,12 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
             {
                 TypeId = symbol.Id.IntegerValue,
                 FamilyName = symbol.FamilyName,
-                RequiredParameters = new Dictionary<string, ParameterInfo>(),
-                OptionalParameters = new Dictionary<string, ParameterInfo>()
+                SchemaVersion = FamilyCreationDefaults.SchemaVersion,
+                Parameters = new Dictionary<string, ParameterInfo>()
             };
 
             var placementType = symbol.Family.FamilyPlacementType;
+            requirements.PlacementType = placementType.ToString();
 
             // 根据族放置类型添加参数要求
             switch (placementType)
@@ -146,20 +148,10 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
                     AddViewBasedParameters(requirements);
                     break;
                 case FamilyPlacementType.Adaptive:
-                    requirements.RequiredParameters["error"] = new ParameterInfo
-                    {
-                        Type = "string",
-                        Description = "Adaptive族暂不支持",
-                        Example = "不支持"
-                    };
+                    requirements.Message = "Adaptive族类型暂不支持自动创建";
                     break;
                 default:
-                    requirements.RequiredParameters["error"] = new ParameterInfo
-                    {
-                        Type = "string",
-                        Description = "未知的族放置类型",
-                        Example = placementType.ToString()
-                    };
+                    requirements.Message = $"未知族放置类型: {placementType}";
                     break;
             }
 
@@ -433,32 +425,35 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
 
         private void AddOneLevelBasedParameters(FamilyCreationRequirements requirements)
         {
-            requirements.RequiredParameters["locationPoint"] = new ParameterInfo
+            requirements.Parameters["locationPoint"] = new ParameterInfo
             {
-                Type = "JZPoint",
-                Description = "放置点坐标（毫米）",
+                Required = true,
+                Description = "放置点坐标(mm)",
                 Example = new { x = 2000.0, y = 1500.0, z = 0.0 }
             };
 
-            requirements.OptionalParameters["baseLevelId"] = new ParameterInfo
+            requirements.Parameters["baseLevelId"] = new ParameterInfo
             {
-                Type = "int",
+                Required = false,
                 Description = "基准标高的ElementId",
-                Example = 12345
+                Example = 12345,
+                Default = -1
             };
 
-            requirements.OptionalParameters["baseOffset"] = new ParameterInfo
+            requirements.Parameters["baseOffset"] = new ParameterInfo
             {
-                Type = "double",
-                Description = "相对基准标高的偏移（毫米）",
-                Example = 1000.0
+                Required = false,
+                Description = "相对基准标高的偏移(mm)",
+                Example = 1000.0,
+                Default = FamilyCreationDefaults.BaseOffset
             };
 
-            requirements.OptionalParameters["autoFindLevel"] = new ParameterInfo
+            requirements.Parameters["autoFindLevel"] = new ParameterInfo
             {
-                Type = "bool",
+                Required = false,
                 Description = "是否自动查找最近标高",
-                Example = true
+                Example = true,
+                Default = FamilyCreationDefaults.AutoFindLevel
             };
         }
 
@@ -466,32 +461,36 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
         {
             AddOneLevelBasedParameters(requirements);
 
-            requirements.OptionalParameters["autoFindHost"] = new ParameterInfo
+            requirements.Parameters["autoFindHost"] = new ParameterInfo
             {
-                Type = "bool",
+                Required = false,
                 Description = "是否自动查找宿主元素",
-                Example = true
+                Example = true,
+                Default = FamilyCreationDefaults.AutoFindHost
             };
 
-            requirements.OptionalParameters["searchRadius"] = new ParameterInfo
+            requirements.Parameters["searchRadius"] = new ParameterInfo
             {
-                Type = "double",
-                Description = "自动查找宿主的搜索半径（毫米）",
-                Example = 5000.0
+                Required = false,
+                Description = "自动查找宿主的搜索半径(mm)",
+                Example = 1000.0,
+                Default = FamilyCreationDefaults.SearchRadius
             };
 
-            requirements.OptionalParameters["hostCategories"] = new ParameterInfo
+            requirements.Parameters["hostCategories"] = new ParameterInfo
             {
-                Type = "string[]",
+                Required = false,
                 Description = "宿主类别过滤",
-                Example = new[] { "OST_Walls", "OST_Floors" }
+                Example = new[] { "OST_Walls", "OST_Floors" },
+                Default = FamilyCreationDefaults.DefaultHostCategories
             };
 
-            requirements.OptionalParameters["hostElementId"] = new ParameterInfo
+            requirements.Parameters["hostElementId"] = new ParameterInfo
             {
-                Type = "int",
+                Required = false,
                 Description = "指定宿主元素的ElementId",
-                Example = 67890
+                Example = 67890,
+                Default = -1
             };
         }
 
@@ -499,61 +498,62 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
         {
             AddOneLevelBasedParameters(requirements);
 
-            requirements.RequiredParameters["topLevelId"] = new ParameterInfo
+            requirements.Parameters["topLevelId"] = new ParameterInfo
             {
-                Type = "int",
+                Required = true,
                 Description = "顶部标高的ElementId",
                 Example = 54321
             };
 
-            requirements.OptionalParameters["topOffset"] = new ParameterInfo
+            requirements.Parameters["topOffset"] = new ParameterInfo
             {
-                Type = "double",
-                Description = "相对顶部标高的偏移（毫米）",
-                Example = 0.0
+                Required = false,
+                Description = "相对顶部标高的偏移(mm)",
+                Example = 0.0,
+                Default = FamilyCreationDefaults.TopOffset
             };
         }
 
         private void AddWorkPlaneBasedParameters(FamilyCreationRequirements requirements)
         {
-            requirements.RequiredParameters["locationPoint"] = new ParameterInfo
+            requirements.Parameters["locationPoint"] = new ParameterInfo
             {
-                Type = "JZPoint",
+                Required = true,
                 Description = "放置点坐标（毫米）",
                 Example = new { x = 2000.0, y = 1500.0, z = 1000.0 }
             };
 
-            requirements.OptionalParameters["faceDirection"] = new ParameterInfo
+            requirements.Parameters["faceDirection"] = new ParameterInfo
             {
-                Type = "JZPoint",
+                Required = true,
                 Description = "面法向量（标准化）",
                 Example = new { x = 0.0, y = 0.0, z = 1.0 }
             };
 
-            requirements.OptionalParameters["handDirection"] = new ParameterInfo
+            requirements.Parameters["handDirection"] = new ParameterInfo
             {
-                Type = "JZPoint",
+                Required = true,
                 Description = "手向量（标准化）",
                 Example = new { x = 1.0, y = 0.0, z = 0.0 }
             };
 
-            requirements.OptionalParameters["autoFindHost"] = new ParameterInfo
+            requirements.Parameters["autoFindHost"] = new ParameterInfo
             {
-                Type = "bool",
+                Required = false,
                 Description = "是否自动查找宿主面",
                 Example = true
             };
 
-            requirements.OptionalParameters["searchRadius"] = new ParameterInfo
+            requirements.Parameters["searchRadius"] = new ParameterInfo
             {
-                Type = "double",
+                Required = false,
                 Description = "自动查找宿主的搜索半径（毫米）",
                 Example = 5000.0
             };
 
-            requirements.OptionalParameters["hostCategories"] = new ParameterInfo
+            requirements.Parameters["hostCategories"] = new ParameterInfo
             {
-                Type = "string[]",
+                Required = false,
                 Description = "宿主类别过滤",
                 Example = new[] { "OST_Walls", "OST_Floors", "OST_Ceilings" }
             };
@@ -561,23 +561,23 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
 
         private void AddCurveBasedParameters(FamilyCreationRequirements requirements)
         {
-            requirements.RequiredParameters["locationLine"] = new ParameterInfo
+            requirements.Parameters["locationLine"] = new ParameterInfo
             {
-                Type = "JZLine",
+                Required = true,
                 Description = "线性路径（毫米）",
                 Example = new { p0 = new { x = 0.0, y = 0.0, z = 0.0 }, p1 = new { x = 5000.0, y = 0.0, z = 0.0 } }
             };
 
-            requirements.OptionalParameters["baseLevelId"] = new ParameterInfo
+            requirements.Parameters["baseLevelId"] = new ParameterInfo
             {
-                Type = "int",
+                Required = true,
                 Description = "基准标高的ElementId",
                 Example = 12345
             };
 
-            requirements.OptionalParameters["baseOffset"] = new ParameterInfo
+            requirements.Parameters["baseOffset"] = new ParameterInfo
             {
-                Type = "double",
+                Required = false,
                 Description = "相对基准标高的偏移（毫米）",
                 Example = 0.0
             };
@@ -585,16 +585,16 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
 
         private void AddViewBasedParameters(FamilyCreationRequirements requirements)
         {
-            requirements.RequiredParameters["locationPoint"] = new ParameterInfo
+            requirements.Parameters["locationPoint"] = new ParameterInfo
             {
-                Type = "JZPoint",
+                Required = true,
                 Description = "放置点坐标（毫米）",
                 Example = new { x = 2000.0, y = 1500.0, z = 0.0 }
             };
 
-            requirements.RequiredParameters["viewId"] = new ParameterInfo
+            requirements.Parameters["viewId"] = new ParameterInfo
             {
-                Type = "int",
+                Required = true,
                 Description = "目标2D视图的ElementId",
                 Example = 67890
             };

@@ -416,13 +416,13 @@ namespace RevitMCPCommandSet.Features.ElementFilter
                 elementInfo.BoundingBox = GetBoundingBoxInfo(element);
                 // 参数
                 //elementInfo.Parameters = GetDimensionParameters(element);
-                ParameterInfo thicknessParam = GetThicknessInfo(element); //厚度参数
+                FilterParameterInfo thicknessParam = GetThicknessInfo(element); //厚度参数
                 if (thicknessParam != null)
                 {
                     elementInfo.Parameters.Add(thicknessParam);
                 }
 
-                ParameterInfo heightParam = GetBoundingBoxHeight(elementInfo.BoundingBox); //高度参数
+                FilterParameterInfo heightParam = GetBoundingBoxHeight(elementInfo.BoundingBox); //高度参数
                 if (heightParam != null)
                 {
                     elementInfo.Parameters.Add(heightParam);
@@ -848,7 +848,7 @@ namespace RevitMCPCommandSet.Features.ElementFilter
         /// </summary>
         /// <param name="element">系统族构件（墙、楼板、门等）</param>
         /// <returns>参数信息对象，无效返回null</returns>
-        public static ParameterInfo GetThicknessInfo(Element element)
+        public static FilterParameterInfo GetThicknessInfo(Element element)
         {
             if (element == null)
             {
@@ -890,7 +890,7 @@ namespace RevitMCPCommandSet.Features.ElementFilter
 
             if (thicknessParam != null && thicknessParam.HasValue)
             {
-                return new ParameterInfo
+                return new FilterParameterInfo
                 {
                     Name = "厚度",
                     Value = $"{thicknessParam.AsDouble() * 304.8}"
@@ -1005,7 +1005,7 @@ namespace RevitMCPCommandSet.Features.ElementFilter
         /// </summary>
         /// <param name="boundingBoxInfo">包围盒信息</param>
         /// <returns>参数信息对象，无效返回null</returns>
-        public static ParameterInfo GetBoundingBoxHeight(BoundingBoxInfo boundingBoxInfo)
+        public static FilterParameterInfo GetBoundingBoxHeight(BoundingBoxInfo boundingBoxInfo)
         {
             try
             {
@@ -1018,7 +1018,7 @@ namespace RevitMCPCommandSet.Features.ElementFilter
                 // Z轴方向的差值即为高度
                 double height = Math.Abs(boundingBoxInfo.Max.Z - boundingBoxInfo.Min.Z);
 
-                return new ParameterInfo
+                return new FilterParameterInfo
                 {
                     Name = "高度",
                     Value = $"{height}"
@@ -1035,15 +1035,15 @@ namespace RevitMCPCommandSet.Features.ElementFilter
         /// </summary>
         /// <param name="element">Revit元素</param>
         /// <returns>参数信息列表</returns>
-        public static List<ParameterInfo> GetDimensionParameters(Element element)
+        public static List<FilterParameterInfo> GetDimensionParameters(Element element)
         {
             // 检查元素是否为空
             if (element == null)
             {
-                return new List<ParameterInfo>();
+                return new List<FilterParameterInfo>();
             }
 
-            var parameters = new List<ParameterInfo>();
+            var parameters = new List<FilterParameterInfo>();
 
             // 获取元素的所有参数
             foreach (Parameter param in element.Parameters)
@@ -1065,7 +1065,7 @@ namespace RevitMCPCommandSet.Features.ElementFilter
                         // 如果值非空，则添加到列表中
                         if (!string.IsNullOrWhiteSpace(value))
                         {
-                            parameters.Add(new ParameterInfo
+                            parameters.Add(new FilterParameterInfo
                             {
                                 Name = param.Definition.Name,
                                 Value = value
@@ -1171,7 +1171,7 @@ namespace RevitMCPCommandSet.Features.ElementFilter
         /// <summary>
         /// 实例参数
         /// </summary>
-        public List<ParameterInfo> Parameters { get; set; } = new List<ParameterInfo>();
+        public List<FilterParameterInfo> Parameters { get; set; } = new List<FilterParameterInfo>();
     }
 
     /// <summary>
@@ -1212,7 +1212,7 @@ namespace RevitMCPCommandSet.Features.ElementFilter
         /// <summary>
         /// 类型参数
         /// </summary>
-        public List<ParameterInfo> Parameters { get; set; } = new List<ParameterInfo>();
+        public List<FilterParameterInfo> Parameters { get; set; } = new List<FilterParameterInfo>();
     }
 
     /// <summary>
@@ -1608,9 +1608,9 @@ namespace RevitMCPCommandSet.Features.ElementFilter
 
 
     /// <summary>
-    /// 存储参数信息完整的自定义类
+    /// 存储过滤器参数信息的自定义类（用于ElementFilter功能）
     /// </summary>
-    public class ParameterInfo
+    public class FilterParameterInfo
     {
         public string Name { get; set; }
         public string Value { get; set; }

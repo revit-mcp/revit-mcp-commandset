@@ -8,11 +8,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4cc9b141-bb6e-4e08-9932-1963fd0d4048" name="更改" comment="">
-      <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.revit-mcp-commandset/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.revit-mcp-commandset/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TODO.md" beforeDir="false" afterPath="$PROJECT_DIR$/TODO.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi-ai-discussion-template.md" beforeDir="false" afterPath="$PROJECT_DIR$/multi-ai-discussion-template.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/revit-mcp-furniture-layout-discussion.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/revit-mcp-commandset/Features/ElementFilter/AIElementFilterEventHandler.cs" beforeDir="false" afterPath="$PROJECT_DIR$/revit-mcp-commandset/Features/ElementFilter/AIElementFilterEventHandler.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -94,7 +90,7 @@
       <workItem from="1758250431953" duration="6471000" />
       <workItem from="1758265425486" duration="4604000" />
       <workItem from="1758271564511" duration="5551000" />
-      <workItem from="1758508639263" duration="8121000" />
+      <workItem from="1758508639263" duration="10142000" />
     </task>
     <task id="LOCAL-00001" summary="存档：通用创建mcp命令创建前">
       <option name="closed" value="true" />

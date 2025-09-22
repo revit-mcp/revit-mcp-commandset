@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 namespace RevitMCPCommandSet.Models.Common
 {
     /// <summary>
-    /// 族创建参数需求
+    /// 族创建参数需求（精简版）
     /// </summary>
     public class FamilyCreationRequirements
     {
@@ -20,74 +20,48 @@ namespace RevitMCPCommandSet.Models.Common
         public string FamilyName { get; set; }
 
         /// <summary>
-        /// 类型名称
-        /// </summary>
-        [JsonProperty("typeName")]
-        public string TypeName { get; set; }
-
-        /// <summary>
         /// 放置类型
         /// </summary>
         [JsonProperty("placementType")]
         public string PlacementType { get; set; }
 
         /// <summary>
-        /// 是否支持
+        /// 架构版本
         /// </summary>
-        [JsonProperty("isSupported")]
-        public bool IsSupported { get; set; }
+        [JsonProperty("schemaVersion")]
+        public int SchemaVersion { get; set; } = 1;
 
         /// <summary>
-        /// 不支持的原因
+        /// 统一参数字典（包含必需和可选参数）
         /// </summary>
-        [JsonProperty("unsupportedReason")]
-        public string UnsupportedReason { get; set; }
+        [JsonProperty("parameters")]
+        public Dictionary<string, ParameterInfo> Parameters { get; set; }
 
         /// <summary>
-        /// 必需参数
+        /// 消息（用于不支持族类型的说明）
         /// </summary>
-        [JsonProperty("requiredParameters")]
-        public Dictionary<string, ParameterInfo> RequiredParameters { get; set; }
-
-        /// <summary>
-        /// 可选参数
-        /// </summary>
-        [JsonProperty("optionalParameters")]
-        public Dictionary<string, ParameterInfo> OptionalParameters { get; set; }
-
-        /// <summary>
-        /// 示例值
-        /// </summary>
-        [JsonProperty("examples")]
-        public Dictionary<string, object> Examples { get; set; }
+        [JsonProperty("message")]
+        public string Message { get; set; }
 
         public FamilyCreationRequirements()
         {
-            RequiredParameters = new Dictionary<string, ParameterInfo>();
-            OptionalParameters = new Dictionary<string, ParameterInfo>();
-            Examples = new Dictionary<string, object>();
+            Parameters = new Dictionary<string, ParameterInfo>();
         }
     }
 
     /// <summary>
-    /// 参数信息
+    /// 参数信息（精简版）
     /// </summary>
     public class ParameterInfo
     {
         /// <summary>
-        /// 数据类型
+        /// 是否为必需参数
         /// </summary>
-        [JsonProperty("type")]
-        public string Type { get; set; }
+        [JsonProperty("required")]
+        public bool Required { get; set; }
 
         /// <summary>
-        /// 单位约定
-        /// </summary>
-        [JsonProperty("unit")]
-        public string Unit { get; set; }
-
-        /// <summary>
-        /// 参数说明
+        /// 参数说明（包含单位信息）
         /// </summary>
         [JsonProperty("description")]
         public string Description { get; set; }
@@ -99,9 +73,9 @@ namespace RevitMCPCommandSet.Models.Common
         public object Example { get; set; }
 
         /// <summary>
-        /// 取值范围（可选）
+        /// 默认值（仅可选参数使用）
         /// </summary>
-        [JsonProperty("range")]
-        public string Range { get; set; }
+        [JsonProperty("default")]
+        public object Default { get; set; }
     }
 }
