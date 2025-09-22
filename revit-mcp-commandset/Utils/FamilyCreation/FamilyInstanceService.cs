@@ -13,6 +13,45 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
     /// </summary>
     public class FamilyInstanceService
     {
+        #region 默认值配置
+
+        /// <summary>
+        /// 是否自动查找宿主元素
+        /// </summary>
+        public static bool DefaultAutoFindHost { get; set; } = true;
+
+        /// <summary>
+        /// 是否自动查找标高
+        /// </summary>
+        public static bool DefaultAutoFindLevel { get; set; } = true;
+
+        /// <summary>
+        /// 搜索半径（毫米）
+        /// </summary>
+        public static double DefaultSearchRadius { get; set; } = 1000;
+
+        /// <summary>
+        /// 底部偏移（毫米）
+        /// </summary>
+        public static double DefaultBaseOffset { get; set; } = 0;
+
+        /// <summary>
+        /// 顶部偏移（毫米）
+        /// </summary>
+        public static double DefaultTopOffset { get; set; } = 0;
+
+        /// <summary>
+        /// 默认宿主类别（墙）
+        /// </summary>
+        public static string[] DefaultHostCategories { get; set; } = { "OST_Walls" };
+
+        /// <summary>
+        /// 架构版本
+        /// </summary>
+        public static int DefaultSchemaVersion { get; set; } = 1;
+
+        #endregion
+
         private readonly Document doc;
         private readonly FamilyInstanceCreator creator;
 
@@ -440,14 +479,14 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
             {
                 Required = false,
                 Description = "相对基准标高的偏移(mm)",
-                Default = FamilyCreationDefaults.BaseOffset
+                Default = DefaultBaseOffset
             };
 
             requirements.Parameters["autoFindLevel"] = new ParameterInfo
             {
                 Required = false,
                 Description = "是否自动查找最近标高",
-                Default = FamilyCreationDefaults.AutoFindLevel
+                Default = DefaultAutoFindLevel
             };
         }
 
@@ -459,21 +498,21 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
             {
                 Required = false,
                 Description = "是否自动查找宿主元素",
-                Default = FamilyCreationDefaults.AutoFindHost
+                Default = DefaultAutoFindHost
             };
 
             requirements.Parameters["searchRadius"] = new ParameterInfo
             {
                 Required = false,
                 Description = "自动查找宿主的搜索半径(mm)",
-                Default = FamilyCreationDefaults.SearchRadius
+                Default = DefaultSearchRadius
             };
 
             requirements.Parameters["hostCategories"] = new ParameterInfo
             {
                 Required = false,
                 Description = "宿主类别过滤",
-                Default = FamilyCreationDefaults.DefaultHostCategories
+                Default = DefaultHostCategories
             };
 
             requirements.Parameters["hostElementId"] = new ParameterInfo
@@ -498,7 +537,7 @@ namespace RevitMCPCommandSet.Utils.FamilyCreation
             {
                 Required = false,
                 Description = "相对顶部标高的偏移(mm)",
-                Default = FamilyCreationDefaults.TopOffset
+                Default = DefaultTopOffset
             };
         }
 
