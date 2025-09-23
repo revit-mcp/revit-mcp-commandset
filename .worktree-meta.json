@@ -1,7 +1,0 @@
-{
-  "base_branch": "dev/cli-based",
-  "worktree_branch": "fix/revitstatus-bug",
-  "worktree_path": "../revit-mcp-commandset-revitstatus-bug",
-  "created_at": "2025-09-23T14:30:25Z",
-  "task_description": "修改RevitStatus模块的bug"
-}

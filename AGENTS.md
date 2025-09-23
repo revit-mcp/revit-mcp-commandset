@@ -39,20 +39,50 @@ revit-mcp-commandset/
 ├── Features/                  # 功能模块目录（按功能组织）
 │   ├── ElementFilter/         # 元素过滤功能模块
 │   │   ├── AIElementFilterCommand.cs
-│   │   └── AIElementFilterEventHandler.cs
-│   └── ElementOperation/      # 元素操作功能模块
-│       ├── OperateElementCommand.cs
-│       └── OperateElementEventHandler.cs
+│   │   ├── AIElementFilterEventHandler.cs
+│   │   └── Models/           # 元素过滤模型
+│   │       └── FilterSetting.cs
+│   ├── ElementOperation/      # 元素操作功能模块
+│   │   ├── OperateElementCommand.cs
+│   │   ├── OperateElementEventHandler.cs
+│   │   └── Models/           # 元素操作模型
+│   │       └── OperationSetting.cs
+│   ├── FamilyInstanceCreation/ # 族实例创建功能模块
+│   │   ├── CreateFamilyInstanceCommand.cs
+│   │   ├── CreateFamilyInstanceEventHandler.cs
+│   │   ├── GetFamilyCreationSuggestionCommand.cs
+│   │   ├── GetFamilyCreationSuggestionEventHandler.cs
+│   │   └── Models/           # 族创建模型
+│   │       └── FamilyCreationParameters.cs
+│   ├── SystemElementCreation/ # 系统族创建功能模块
+│   │   ├── CreateSystemElementCommand.cs
+│   │   ├── CreateSystemElementEventHandler.cs
+│   │   ├── GetSystemElementSuggestionCommand.cs
+│   │   ├── GetSystemElementSuggestionEventHandler.cs
+│   │   └── Models/           # 系统族创建模型
+│   │       ├── SystemElementParameters.cs
+│   │       ├── WallSpecificParameters.cs
+│   │       └── FloorSpecificParameters.cs
+│   └── RevitStatus/          # Revit状态功能模块
+│       ├── GetRevitStatusCommand.cs
+│       ├── GetRevitStatusEventHandler.cs
+│       └── Models/           # 状态模型
+│           └── RevitStatusInfo.cs
 ├── Models/                    # 数据模型层
 │   ├── Common/               # 通用模型
 │   │   ├── AIResult.cs
-│   │   ├── FilterSetting.cs
-│   │   └── OperationSetting.cs
+│   │   ├── CreationRequirements.cs
+│   │   └── ParameterInfo.cs
 │   └── Geometry/             # 几何模型
 │       ├── JZPoint.cs
 │       ├── JZLine.cs
 │       └── JZFace.cs
 ├── Utils/                     # 工具类层
+│   ├── FamilyCreation/       # 族创建工具类
+│   │   └── FamilyInstanceCreator.cs
+│   └── SystemCreation/       # 系统族创建工具类
+│       ├── SystemElementCreator.cs
+│       └── SystemElementValidator.cs
 └── RevitMCPCommandSet.csproj  # 项目配置
 ```
 
@@ -157,12 +187,29 @@ public class AIResult<T>
 - **支持**: 类别、类型、空间范围、可见性等多维度过滤
 - **返回**: 详细的元素信息（几何、参数、属性等）
 
-### 2. 点状元素创建 (create_point_based_element)
-- **功能**: 创建基于点定位的族实例
-- **支持**: 门、窗、设备等点状构件
-- **参数**: 位置、尺寸、族类型、标高等
+### 2. 族实例创建 (create_family_instance)
+- **功能**: 通用族实例创建，支持8种族放置类型
+- **放置类型**: OneLevelBased、WorkPlaneBased、TwoLevelsBased、CurveBased、ViewBased等
+- **智能化**: 自动查找标高、自动搜索宿主、智能参数验证
+- **适用范围**: 门、窗、设备、结构构件、注释符号等所有族类型
 
-### 3. 元素操作器 (operate_element)
+### 3. 族创建建议 (get_family_creation_suggestion)
+- **功能**: 为AI提供族创建参数要求和指导
+- **分析内容**: 族放置类型、必需参数、可选参数、参数格式示例
+- **作用**: 帮助AI理解不同族类型的创建需求，提高创建成功率
+
+### 4. 系统族创建 (create_system_element)
+- **功能**: 创建系统族元素（墙体、楼板等）
+- **支持类型**: Wall（墙体）、Floor（楼板），预留 Ceiling、Roof
+- **智能化**: 自动查找标高、参数验证、智能连接相邻墙体
+- **架构特色**: 组合模式设计，MCP友好的参数结构
+
+### 5. 系统族参数建议 (get_system_element_suggestion)
+- **功能**: 为AI提供系统族创建参数要求和指导
+- **分析内容**: 必需参数、可选参数、参数格式示例、可用类型列表
+- **作用**: 帮助AI理解不同系统族类型的创建需求
+
+### 6. 元素操作器 (operate_element)
 - **功能**: 对元素进行各种操作
 - **操作类型**: 选择、着色、透明度、隐藏、删除、隔离等
 - **可视化**: 支持颜色标记和3D剖切框
@@ -189,7 +236,7 @@ public class AIResult<T>
 
 4. **创建数据模型（如需要）**
    ```bash
-   Models/Common/YourDataModel.cs
+   Features/YourNewFeature/Models/YourDataModel.cs
    ```
 
 5. **更新 command.json**
@@ -205,46 +252,18 @@ public class AIResult<T>
 
 每个 Features 子目录代表一个完整的功能模块：
 - **ElementFilter**: 元素查询和过滤相关功能
-- **ElementCreation**: 元素创建相关功能
+- **FamilyInstanceCreation**: 族实例创建和参数建议功能
+- **SystemElementCreation**: 系统族创建和参数建议功能
 - **ElementOperation**: 元素操作相关功能
+- **RevitStatus**: Revit状态查询功能
 
 ### 命名空间规范
 
 - 功能模块命名空间：`RevitMCPCommandSet.Features.{ModuleName}`
+- 模块模型命名空间：`RevitMCPCommandSet.Features.{ModuleName}.Models`
 - 公共模型命名空间：`RevitMCPCommandSet.Models.Common`
 - 几何模型命名空间：`RevitMCPCommandSet.Models.Geometry`
 - 工具类命名空间：`RevitMCPCommandSet.Utils`
-
-### 调试技巧
-
-1. **日志输出**
-   ```csharp
-   System.Diagnostics.Trace.WriteLine("调试信息");
-   ```
-
-2. **异常处理**
-   ```csharp
-   try { /* Revit 操作 */ }
-   catch (Exception ex)
-   {
-       return new AIResult<T>
-       {
-           Success = false,
-           Message = $"操作失败: {ex.Message}"
-       };
-   }
-   ```
-
-3. **超时控制**
-   - 默认超时: 10秒
-   - 复杂操作可适当延长
-   - 必须调用 `_resetEvent.Set()` 通知完成
-
-### 编译配置
-
-- **多版本支持**: 条件编译适配 Revit 2020-2025
-- **调试模式**: 自动启动对应版本 Revit
-- **发布路径**: 按版本号组织输出目录
 
 ## 注意事项
 
@@ -275,4 +294,48 @@ A: 在 Features 下创建新目录，将相关的 Command 和 EventHandler 放�
 
 ---
 
+## 📊 项目最近更新
+
+基于 Git 历史记录的最新进展（截至 2025-09-23）：
+
+### v2.3.0 - Models架构重组完成 (2025-09-23)
+- 🗂️ **Models文件夹重组**：将模块特定Models移至各功能模块下
+- 📁 **架构清晰化**：Features\[Module]\Models结构，提升模块独立性
+- 🔧 **命名空间优化**：统一模块Models命名空间规范
+- ✅ **编译验证通过**：R20+x64平台兼容性确认
+- 📚 **文档同步更新**：CLAUDE.md反映最新目录结构
+
+### v2.2.0 - SystemElementCreation 重构完成 (2025-09-23)
+- 🎉 **完成系统族创建模块重构**：采用MCP友好的组合模式设计
+- 🔧 **重构SystemElementParameters**：改用字符串elementType和组合模式
+- ⚡ **新建SystemElementValidator**：集中处理参数验证逻辑
+- 🗑️ **删除冗余类**：移除SystemElementSuggestion和SystemParameterInfo
+- 🔄 **统一数据模型**：全面使用CreationRequirements和ParameterInfo
+- 💡 **扩展ParameterInfo**：添加Type、Example、IsRequired字段支持
+- 🧹 **更新所有相关类**：Creator、EventHandler、Command全部适配新架构
+- ✅ **编译通过验证**：确保重构结果代码正确性
+
+### v2.1.0 - API 优化更新 (2025-09-23)
+- 🔧 **AIResult.Message字段优化**：明确Response数据类型和含义，提升API文档清晰度
+- 📚 **文档全面更新**：同步更新所有功能模块README.md，反映最新架构变更和功能特性
+- 🎯 **统一规范完善**：强化"data"包裹层要求，保持接口一致性
+
+### v2.0.x - 架构重构系列 (2025-09-22)
+- 🧹 **FamilyCreationDefaults清理** (662eaae)：删除冗余默认值类，移至FamilyInstanceService静态属性
+- 🏗️ **双层架构完善** (03999cc)：Creator专注核心创建逻辑，Service负责智能验证和建议
+- ⚡ **错误处理标准化** (9aa1c0e)：FamilyInstanceCreator改用标准异常抛出，替代Console.WriteLine
+- 🚀 **参数建议精简** (8991e6e)：彻底优化族创建参数建议格式，提升AI理解效率
+- 🔄 **ElementFilter修复** (fcd879f)：完成ParameterInfo类型引用修复，确保过滤功能稳定
+
+---
+
 更多详细信息请参考项目源码和 RevitMCPSDK 文档。
+
+### 📋 相关文档链接
+- [族实例创建功能文档](./revit-mcp-commandset/Features/FamilyInstanceCreation/README.md)
+- [系统族创建功能文档](./revit-mcp-commandset/Features/SystemElementCreation/README.md)
+- [元素过滤器文档](./revit-mcp-commandset/Features/ElementFilter/README.md)
+- [元素操作器文档](./revit-mcp-commandset/Features/ElementOperation/README.md)
+- [Revit状态功能文档](./revit-mcp-commandset/Features/RevitStatus/README.md)
+- [族创建工具模块文档](./revit-mcp-commandset/Utils/FamilyCreation/README.md)
+- [系统族创建工具模块文档](./revit-mcp-commandset/Utils/SystemCreation/README.md)
