@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace RevitMCPCommandSet.Models.Common
+namespace RevitMCPCommandSet.Features.RevitStatus.Models
 {
     /// <summary>
     /// Revit状态信息

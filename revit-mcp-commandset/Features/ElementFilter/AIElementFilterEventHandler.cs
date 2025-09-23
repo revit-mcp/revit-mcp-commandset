@@ -2,6 +2,7 @@
 using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Common;
+using RevitMCPCommandSet.Features.ElementFilter.Models;
 using RevitMCPCommandSet.Models.Geometry;
 using RevitMCPSDK.API.Interfaces;
 

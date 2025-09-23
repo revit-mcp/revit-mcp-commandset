@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RevitMCPCommandSet.Models.Common
+namespace RevitMCPCommandSet.Features.ElementOperation.Models
 {
     /// <summary>
     /// 定义可对图元执行的操作类型

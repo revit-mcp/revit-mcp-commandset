@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using RevitMCPSDK.API.Base;
 using RevitMCPCommandSet.Models.Common;
+using RevitMCPCommandSet.Features.RevitStatus.Models;
 using System;
 
 namespace RevitMCPCommandSet.Features.RevitStatus
@@ -31,19 +32,7 @@ namespace RevitMCPCommandSet.Features.RevitStatus
         {
             try
             {
-                // 强制解析 data 包裹层
-                var dataToken = parameters["data"];
-                if (dataToken == null)
-                {
-                    return new AIResult<RevitStatusInfo>
-                    {
-                        Success = false,
-                        Message = "参数格式错误：缺少 'data' 包裹层"
-                    };
-                }
-
-                // 此命令不需要输入参数，但仍需要data包裹层
-                // 可以传入空的data对象 {}
+                // 此命令不需要输入参数
 
                 // 触发外部事件并等待完成
                 if (RaiseAndWaitForCompletion(10000))

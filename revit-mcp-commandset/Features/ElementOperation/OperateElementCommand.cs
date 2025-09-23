@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using RevitMCPSDK.API.Base;
 using RevitMCPCommandSet.Models.Common;
+using RevitMCPCommandSet.Features.ElementOperation.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,7 +1,7 @@
 using RevitMCPCommandSet.Models.Geometry;
 using Newtonsoft.Json;
 
-namespace RevitMCPCommandSet.Models.Common
+namespace RevitMCPCommandSet.Features.SystemElementCreation.Models
 {
     /// <summary>
     /// 墙体专用参数

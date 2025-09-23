@@ -1,6 +1,7 @@
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Common;
+using RevitMCPCommandSet.Features.SystemElementCreation.Models;
 using RevitMCPCommandSet.Utils.SystemCreation;
 using RevitMCPSDK.API.Interfaces;
 using System;

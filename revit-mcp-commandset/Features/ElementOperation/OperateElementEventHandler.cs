@@ -2,6 +2,7 @@
 using Autodesk.Revit.UI;
 using RevitMCPSDK.API.Interfaces;
 using RevitMCPCommandSet.Models.Common;
+using RevitMCPCommandSet.Features.ElementOperation.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;

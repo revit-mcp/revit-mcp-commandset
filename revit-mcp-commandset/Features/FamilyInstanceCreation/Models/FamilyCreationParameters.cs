@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using RevitMCPCommandSet.Models.Geometry;
 
-namespace RevitMCPCommandSet.Models.Common
+namespace RevitMCPCommandSet.Features.FamilyInstanceCreation.Models
 {
     /// <summary>
     /// 族创建参数

@@ -5,6 +5,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using RevitMCPSDK.API.Interfaces;
 using RevitMCPCommandSet.Models.Common;
+using RevitMCPCommandSet.Features.FamilyInstanceCreation.Models;
 
 namespace RevitMCPCommandSet.Features.FamilyInstanceCreation
 {
