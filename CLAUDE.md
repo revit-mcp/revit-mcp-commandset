@@ -208,6 +208,16 @@ public class AIResult<T>
 
 ## 快速开发指南
 
+### 编译配置
+- **标准编译配置**: Debug R20, x64
+- **MSBuild路径**: `"D:\JetBrains\JetBrains Rider 2025.1.4\tools\MSBuild\Current\Bin\MSBuild.exe"`
+
+### 编译命令
+```bash
+# 标准编译命令（推荐）
+"D:\JetBrains\JetBrains Rider 2025.1.4\tools\MSBuild\Current\Bin\MSBuild.exe" "E:\工作文档\开发类\MyCode\Revit-MCP\revit-mcp-commandset\revit-mcp-commandset\RevitMCPCommandSet.csproj" -p:Configuration="Debug R20" -nologo -clp:ErrorsOnly
+```
+
 ### 添加新功能模块
 
 1. **创建功能模块目录**
