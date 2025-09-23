@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace RevitMCPCommandSet.Features.SystemElementCreation.Models
+namespace RevitMCPCommandSet.Features.UnifiedCommands.Models
 {
     /// <summary>
     /// 系统族创建参数（优化的包装模式，适配MCP架构）

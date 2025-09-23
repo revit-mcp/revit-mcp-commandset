@@ -1,7 +1,6 @@
 using System;
 using Autodesk.Revit.DB;
 using RevitMCPCommandSet.Features.UnifiedCommands.Models;
-using RevitMCPCommandSet.Features.SystemElementCreation.Models;
 
 namespace RevitMCPCommandSet.Features.UnifiedCommands.Utils
 {

@@ -19,23 +19,13 @@
       "assemblyPath": "RevitMCPCommandSet.dll"
     },
     {
-      "commandName": "get_family_creation_suggestion",
-      "description": "Gets suggestions for family creation based on the current context",
+      "commandName": "create_element",
+      "description": "Unified element creation command for both family instances and system elements",
       "assemblyPath": "RevitMCPCommandSet.dll"
     },
     {
-      "commandName": "create_family_instance",
-      "description": "Creates a family instance in the Revit document",
-      "assemblyPath": "RevitMCPCommandSet.dll"
-    },
-    {
-      "commandName": "create_system_element",
-      "description": "Create system family elements (walls, floors, etc.)",
-      "assemblyPath": "RevitMCPCommandSet.dll"
-    },
-    {
-      "commandName": "get_system_element_suggestion",
-      "description": "Get parameter requirements for creating system family elements",
+      "commandName": "get_element_creation_suggestion",
+      "description": "Get unified parameter requirements for creating elements (family instances and system elements)",
       "assemblyPath": "RevitMCPCommandSet.dll"
     },
     {

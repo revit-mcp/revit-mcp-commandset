@@ -47,22 +47,21 @@ revit-mcp-commandset/
 │   │   ├── OperateElementEventHandler.cs
 │   │   └── Models/           # 元素操作模型
 │   │       └── OperationSetting.cs
-│   ├── FamilyInstanceCreation/ # 族实例创建功能模块
-│   │   ├── CreateFamilyInstanceCommand.cs
-│   │   ├── CreateFamilyInstanceEventHandler.cs
-│   │   ├── GetFamilyCreationSuggestionCommand.cs
-│   │   ├── GetFamilyCreationSuggestionEventHandler.cs
-│   │   └── Models/           # 族创建模型
-│   │       └── FamilyCreationParameters.cs
-│   ├── SystemElementCreation/ # 系统族创建功能模块
-│   │   ├── CreateSystemElementCommand.cs
-│   │   ├── CreateSystemElementEventHandler.cs
-│   │   ├── GetSystemElementSuggestionCommand.cs
-│   │   ├── GetSystemElementSuggestionEventHandler.cs
-│   │   └── Models/           # 系统族创建模型
-│   │       ├── SystemElementParameters.cs
-│   │       ├── WallSpecificParameters.cs
-│   │       └── FloorSpecificParameters.cs
+│   ├── UnifiedCommands/      # 统一命令功能模块（取代旧的族和系统族模块）
+│   │   ├── CreateElementCommand.cs
+│   │   ├── CreateElementEventHandler.cs
+│   │   ├── GetElementCreationSuggestionCommand.cs
+│   │   ├── GetElementCreationSuggestionEventHandler.cs
+│   │   ├── Models/           # 统一创建模型
+│   │   │   ├── ElementCreationParameters.cs
+│   │   │   ├── ElementSuggestionParameters.cs
+│   │   │   ├── FamilyCreationOptions.cs
+│   │   │   ├── SystemCreationOptions.cs
+│   │   │   ├── SystemElementParameters.cs
+│   │   │   ├── WallSpecificParameters.cs
+│   │   │   └── FloorSpecificParameters.cs
+│   │   └── Utils/           # 统一工具类
+│   │       └── ElementUtilityService.cs
 │   └── RevitStatus/          # Revit状态功能模块
 │       ├── GetRevitStatusCommand.cs
 │       ├── GetRevitStatusEventHandler.cs
@@ -187,29 +186,22 @@ public class AIResult<T>
 - **支持**: 类别、类型、空间范围、可见性等多维度过滤
 - **返回**: 详细的元素信息（几何、参数、属性等）
 
-### 2. 族实例创建 (create_family_instance)
-- **功能**: 通用族实例创建，支持8种族放置类型
-- **放置类型**: OneLevelBased、WorkPlaneBased、TwoLevelsBased、CurveBased、ViewBased等
-- **智能化**: 自动查找标高、自动搜索宿主、智能参数验证
-- **适用范围**: 门、窗、设备、结构构件、注释符号等所有族类型
+### 2. 统一元素创建 (create_element)
+- **功能**: 统一的元素创建命令，支持族实例和系统族元素
+- **族实例支持**: 8种族放置类型（OneLevelBased、WorkPlaneBased、TwoLevelsBased、CurveBased、ViewBased等）
+- **系统族支持**: Wall（墙体）、Floor（楼板），预留 Ceiling、Roof
+- **智能化**: 自动类型检测、自动查找标高、自动搜索宿主、智能参数验证
+- **适用范围**: 门、窗、设备、结构构件、墙体、楼板等所有Revit元素类型
+- **架构特色**: 单一入口、统一参数模型、智能路由到具体创建器
 
-### 3. 族创建建议 (get_family_creation_suggestion)
-- **功能**: 为AI提供族创建参数要求和指导
-- **分析内容**: 族放置类型、必需参数、可选参数、参数格式示例
-- **作用**: 帮助AI理解不同族类型的创建需求，提高创建成功率
+### 3. 统一创建参数建议 (get_element_creation_suggestion)
+- **功能**: 为AI提供统一的元素创建参数要求和指导
+- **族实例分析**: 族放置类型、必需参数、可选参数、参数格式示例
+- **系统族分析**: 必需参数、可选参数、参数格式示例、可用类型列表
+- **智能检测**: 根据ElementId自动检测元素类型并提供相应建议
+- **作用**: 统一AI对所有Revit元素创建需求的理解，提高创建成功率
 
-### 4. 系统族创建 (create_system_element)
-- **功能**: 创建系统族元素（墙体、楼板等）
-- **支持类型**: Wall（墙体）、Floor（楼板），预留 Ceiling、Roof
-- **智能化**: 自动查找标高、参数验证、智能连接相邻墙体
-- **架构特色**: 组合模式设计，MCP友好的参数结构
-
-### 5. 系统族参数建议 (get_system_element_suggestion)
-- **功能**: 为AI提供系统族创建参数要求和指导
-- **分析内容**: 必需参数、可选参数、参数格式示例、可用类型列表
-- **作用**: 帮助AI理解不同系统族类型的创建需求
-
-### 6. 元素操作器 (operate_element)
+### 4. 元素操作器 (operate_element)
 - **功能**: 对元素进行各种操作
 - **操作类型**: 选择、着色、透明度、隐藏、删除、隔离等
 - **可视化**: 支持颜色标记和3D剖切框
@@ -252,8 +244,7 @@ public class AIResult<T>
 
 每个 Features 子目录代表一个完整的功能模块：
 - **ElementFilter**: 元素查询和过滤相关功能
-- **FamilyInstanceCreation**: 族实例创建和参数建议功能
-- **SystemElementCreation**: 系统族创建和参数建议功能
+- **UnifiedCommands**: 统一元素创建和参数建议功能（整合原FamilyInstanceCreation和SystemElementCreation）
 - **ElementOperation**: 元素操作相关功能
 - **RevitStatus**: Revit状态查询功能
 
@@ -305,6 +296,15 @@ A: 在 Features 下创建新目录，将相关的 Command 和 EventHandler 放�
 - ✅ **编译验证通过**：R20+x64平台兼容性确认
 - 📚 **文档同步更新**：CLAUDE.md反映最新目录结构
 
+### v3.0.0 - UnifiedCommands 架构整合完成 (2025-09-23)
+- 🎉 **完成架构统一**：成功整合FamilyInstanceCreation和SystemElementCreation为UnifiedCommands模块
+- 🔄 **命令简化**：4个命令合并为2个统一命令（create_element, get_element_creation_suggestion）
+- 🗂️ **Models迁移**：SystemElementCreation/Models文件迁移至UnifiedCommands/Models
+- 🧹 **依赖清理**：GetElementCreationSuggestionEventHandler完全移除对旧模块依赖，实现自主逻辑
+- 📝 **注册更新**：command.json更新为新的统一命令注册
+- 🗑️ **模块删除**：清理FamilyInstanceCreation和SystemElementCreation目录
+- ✅ **编译验证**：确保重构后代码编译通过，功能完整
+
 ### v2.2.0 - SystemElementCreation 重构完成 (2025-09-23)
 - 🎉 **完成系统族创建模块重构**：采用MCP友好的组合模式设计
 - 🔧 **重构SystemElementParameters**：改用字符串elementType和组合模式
@@ -332,8 +332,7 @@ A: 在 Features 下创建新目录，将相关的 Command 和 EventHandler 放�
 更多详细信息请参考项目源码和 RevitMCPSDK 文档。
 
 ### 📋 相关文档链接
-- [族实例创建功能文档](./revit-mcp-commandset/Features/FamilyInstanceCreation/README.md)
-- [系统族创建功能文档](./revit-mcp-commandset/Features/SystemElementCreation/README.md)
+- [统一命令功能文档](./revit-mcp-commandset/Features/UnifiedCommands/README.md)
 - [元素过滤器文档](./revit-mcp-commandset/Features/ElementFilter/README.md)
 - [元素操作器文档](./revit-mcp-commandset/Features/ElementOperation/README.md)
 - [Revit状态功能文档](./revit-mcp-commandset/Features/RevitStatus/README.md)

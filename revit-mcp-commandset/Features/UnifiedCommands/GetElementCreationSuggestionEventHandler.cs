@@ -6,8 +6,7 @@ using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPCommandSet.Features.UnifiedCommands.Models;
 using RevitMCPCommandSet.Features.UnifiedCommands.Utils;
-using RevitMCPCommandSet.Features.FamilyInstanceCreation;
-using RevitMCPCommandSet.Features.SystemElementCreation;
+using System.Linq;
 using RevitMCPSDK.API.Interfaces;
 
 namespace RevitMCPCommandSet.Features.UnifiedCommands
@@ -96,23 +95,23 @@ namespace RevitMCPCommandSet.Features.UnifiedCommands
         {
             var allSuggestions = new List<object>();
 
-            // 获取系统族建议
-            var systemHandler = new GetSystemElementSuggestionEventHandler();
-            systemHandler.SetReturnAll(true);
-            systemHandler.Execute(new UIApplication(doc.Application));
-            var systemResults = systemHandler.GetResult();
+            // 系统族建议
+            var systemSuggestions = new List<CreationRequirements>();
+            var supportedTypes = new[] { "wall", "floor" };
 
-            if (systemResults.Success)
+            foreach (var elementType in supportedTypes)
             {
-                allSuggestions.Add(new
-                {
-                    Category = "System",
-                    Description = "系统族创建建议",
-                    Data = systemResults.Response
-                });
+                systemSuggestions.Add(GenerateSystemSuggestion(elementType, doc));
             }
 
-            // 添加族类型建议说明
+            allSuggestions.Add(new
+            {
+                Category = "System",
+                Description = "系统族创建建议",
+                Data = systemSuggestions
+            });
+
+            // 族类型建议说明
             allSuggestions.Add(new
             {
                 Category = "Family",
@@ -133,30 +132,94 @@ namespace RevitMCPCommandSet.Features.UnifiedCommands
         /// </summary>
         private AIResult<object> GetSystemSuggestions(Document doc, ElementSuggestionParameters parameters)
         {
-            var systemHandler = new GetSystemElementSuggestionEventHandler();
+            try
+            {
+                if (!string.IsNullOrEmpty(parameters.ElementType))
+                {
+                    if (!IsElementTypeSupported(parameters.ElementType))
+                    {
+                        return new AIResult<object>
+                        {
+                            Success = false,
+                            Message = $"不支持的系统族类型: {parameters.ElementType}。支持的类型：wall, floor"
+                        };
+                    }
 
-            if (!string.IsNullOrEmpty(parameters.ElementType))
-            {
-                systemHandler.SetElementType(parameters.ElementType);
-            }
-            else if (parameters.ElementId.HasValue)
-            {
-                systemHandler.SetElementId(parameters.ElementId.Value);
-            }
-            else
-            {
-                systemHandler.SetReturnAll(true);
-            }
+                    var suggestion = GenerateSystemSuggestion(parameters.ElementType, doc);
+                    return new AIResult<object>
+                    {
+                        Success = true,
+                        Message = $"获取{GetFriendlyName(parameters.ElementType)}创建参数建议成功",
+                        Response = suggestion
+                    };
+                }
+                else if (parameters.ElementId.HasValue)
+                {
+                    var element = doc.GetElement(new ElementId(parameters.ElementId.Value));
+                    if (element == null)
+                    {
+                        return new AIResult<object>
+                        {
+                            Success = false,
+                            Message = $"ElementId {parameters.ElementId.Value} 无效，未找到对应的元素"
+                        };
+                    }
 
-            systemHandler.Execute(new UIApplication(doc.Application));
-            var result = systemHandler.GetResult();
-
-            return new AIResult<object>
+                    // 判断是否为族类型
+                    if (element is FamilySymbol)
+                    {
+                        return new AIResult<object>
+                        {
+                            Success = false,
+                            Message = $"ElementId {parameters.ElementId.Value} 是族类型，请使用 elementClass='Family' 获取族创建建议"
+                        };
+                    }
+                    else if (element is WallType)
+                    {
+                        var suggestion = GenerateSystemSuggestion("wall", doc);
+                        suggestion.FamilyName = element.Name;
+                        suggestion.Message = $"当前墙体类型: {element.Name}";
+                        return new AIResult<object>
+                        {
+                            Success = true,
+                            Message = "获取墙体创建参数建议成功",
+                            Response = suggestion
+                        };
+                    }
+                    else if (element is FloorType)
+                    {
+                        var suggestion = GenerateSystemSuggestion("floor", doc);
+                        suggestion.FamilyName = element.Name;
+                        suggestion.Message = $"当前楼板类型: {element.Name}";
+                        return new AIResult<object>
+                        {
+                            Success = true,
+                            Message = "获取楼板创建参数建议成功",
+                            Response = suggestion
+                        };
+                    }
+                    else
+                    {
+                        return new AIResult<object>
+                        {
+                            Success = false,
+                            Message = $"ElementId {parameters.ElementId.Value} 不是有效的系统族类型。支持的系统族类型：WallType、FloorType"
+                        };
+                    }
+                }
+                else
+                {
+                    return GetAllSuggestions(doc);
+                }
+            }
+            catch (Exception ex)
             {
-                Success = result.Success,
-                Message = result.Message,
-                Response = result.Response
-            };
+                return new AIResult<object>
+                {
+                    Success = false,
+                    Message = $"获取系统族建议失败: {ex.Message}"
+                };
+            }
         }
 
         /// <summary>
@@ -164,17 +227,43 @@ namespace RevitMCPCommandSet.Features.UnifiedCommands
         /// </summary>
         private AIResult<object> GetFamilySuggestions(Document doc, int elementId)
         {
-            var familyHandler = new GetFamilyCreationSuggestionEventHandler();
-            familyHandler.SetParameters(elementId);
-            familyHandler.Execute(new UIApplication(doc.Application));
-            var result = familyHandler.Result;
-
-            return new AIResult<object>
+            try
             {
-                Success = result.Success,
-                Message = result.Message,
-                Response = result.Response
-            };
+                var element = doc.GetElement(new ElementId(elementId));
+                if (element == null)
+                {
+                    return new AIResult<object>
+                    {
+                        Success = false,
+                        Message = $"ElementId {elementId} 无效，未找到对应的元素"
+                    };
+                }
+
+                if (!(element is FamilySymbol familySymbol))
+                {
+                    return new AIResult<object>
+                    {
+                        Success = false,
+                        Message = $"ElementId {elementId} 不是族类型（FamilySymbol）"
+                    };
+                }
+
+                var suggestion = GenerateFamilySuggestion(familySymbol, doc);
+                return new AIResult<object>
+                {
+                    Success = true,
+                    Message = $"获取族 '{familySymbol.FamilyName}' 创建参数建议成功",
+                    Response = suggestion
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AIResult<object>
+                {
+                    Success = false,
+                    Message = $"获取族创建建议失败: {ex.Message}"
+                };
+            }
         }
 
         /// <summary>
@@ -228,5 +317,280 @@ namespace RevitMCPCommandSet.Features.UnifiedCommands
         {
             return _resetEvent.WaitOne(timeoutMilliseconds);
         }
+
+        #region 私有辅助方法
+
+        /// <summary>
+        /// 生成系统族建议
+        /// </summary>
+        private CreationRequirements GenerateSystemSuggestion(string elementType, Document doc)
+        {
+            var suggestion = new CreationRequirements
+            {
+                TypeId = 0,
+                FamilyName = GetFriendlyName(elementType),
+                Parameters = new Dictionary<string, ParameterInfo>()
+            };
+
+            // 添加通用必需参数
+            suggestion.Parameters["elementType"] = new ParameterInfo
+            {
+                Type = "string",
+                Description = "系统族类型",
+                Example = elementType,
+                IsRequired = true
+            };
+
+            suggestion.Parameters["typeId"] = new ParameterInfo
+            {
+                Type = "int",
+                Description = $"{GetFriendlyName(elementType)}类型ID",
+                Example = GetTypeIdExample(elementType, doc),
+                IsRequired = true
+            };
+
+            // 添加通用可选参数
+            suggestion.Parameters["levelId"] = new ParameterInfo
+            {
+                Type = "int",
+                Description = "关联标高ID（可选，会自动查找）",
+                Example = GetLevelIdExample(doc),
+                IsRequired = false
+            };
+
+            suggestion.Parameters["autoFindLevel"] = new ParameterInfo
+            {
+                Type = "bool",
+                Description = "自动查找最近标高",
+                Example = true,
+                IsRequired = false
+            };
+
+            suggestion.Parameters["isStructural"] = new ParameterInfo
+            {
+                Type = "bool",
+                Description = "是否为结构构件",
+                Example = false,
+                IsRequired = false
+            };
+
+            // 根据类型添加特定参数
+            switch (elementType.ToLower())
+            {
+                case "wall":
+                    AddWallParameters(suggestion.Parameters);
+                    break;
+                case "floor":
+                    AddFloorParameters(suggestion.Parameters);
+                    break;
+            }
+
+            // 添加可用类型列表到消息中
+            suggestion.Message = GetAvailableTypesInfo(elementType, doc);
+
+            return suggestion;
+        }
+
+        /// <summary>
+        /// 生成族建议
+        /// </summary>
+        private CreationRequirements GenerateFamilySuggestion(FamilySymbol familySymbol, Document doc)
+        {
+            var suggestion = new CreationRequirements
+            {
+                TypeId = familySymbol.Id.IntegerValue,
+                FamilyName = familySymbol.FamilyName,
+                Parameters = new Dictionary<string, ParameterInfo>()
+            };
+
+            // 族放置基本参数
+            suggestion.Parameters["typeId"] = new ParameterInfo
+            {
+                Type = "int",
+                Description = "族类型ID",
+                Example = familySymbol.Id.IntegerValue,
+                IsRequired = true
+            };
+
+            // 一般族实例都需要位置信息
+            suggestion.Parameters["locationPoint"] = new ParameterInfo
+            {
+                Type = "JZPoint",
+                Description = "放置位置坐标（毫米）",
+                Example = new { x = 0, y = 0, z = 0 },
+                IsRequired = true
+            };
+
+            // 可选参数
+            suggestion.Parameters["autoFindLevel"] = new ParameterInfo
+            {
+                Type = "bool",
+                Description = "自动查找最近标高",
+                Example = true,
+                IsRequired = false
+            };
+
+            suggestion.Parameters["autoFindHost"] = new ParameterInfo
+            {
+                Type = "bool",
+                Description = "自动查找宿主元素",
+                Example = true,
+                IsRequired = false
+            };
+
+            suggestion.Message = $"族名称: {familySymbol.FamilyName}, 类型: {familySymbol.Name}";
+
+            return suggestion;
+        }
+
+        /// <summary>
+        /// 添加墙体参数
+        /// </summary>
+        private void AddWallParameters(Dictionary<string, ParameterInfo> parameters)
+        {
+            parameters["wallParameters"] = new ParameterInfo
+            {
+                Type = "WallSpecificParameters",
+                Description = "墙体特有参数（包含路径、高度、偏移等）",
+                Example = new
+                {
+                    line = new { p0 = new { x = 0, y = 0, z = 0 }, p1 = new { x = 5000, y = 0, z = 0 } },
+                    height = 3000.0,
+                    baseOffset = 0.0,
+                    autoJoinWalls = true
+                },
+                IsRequired = true
+            };
+        }
+
+        /// <summary>
+        /// 添加楼板参数
+        /// </summary>
+        private void AddFloorParameters(Dictionary<string, ParameterInfo> parameters)
+        {
+            parameters["floorParameters"] = new ParameterInfo
+            {
+                Type = "FloorSpecificParameters",
+                Description = "楼板特有参数（包含边界、偏移、坡度等）",
+                Example = new
+                {
+                    boundary = new[]
+                    {
+                        new { x = 0, y = 0, z = 0 },
+                        new { x = 5000, y = 0, z = 0 },
+                        new { x = 5000, y = 5000, z = 0 },
+                        new { x = 0, y = 5000, z = 0 }
+                    },
+                    topOffset = 0.0,
+                    slope = 2.0
+                },
+                IsRequired = true
+            };
+        }
+
+        private bool IsElementTypeSupported(string elementType)
+        {
+            var supportedTypes = new[] { "wall", "floor" };
+            return supportedTypes.Contains(elementType.ToLower());
+        }
+
+        private string GetFriendlyName(string elementType)
+        {
+            return elementType.ToLower() switch
+            {
+                "wall" => "墙体",
+                "floor" => "楼板",
+                _ => elementType
+            };
+        }
+
+        private int GetTypeIdExample(string elementType, Document doc)
+        {
+            try
+            {
+                switch (elementType.ToLower())
+                {
+                    case "wall":
+                        var wallType = new FilteredElementCollector(doc)
+                            .OfClass(typeof(WallType))
+                            .Cast<WallType>()
+                            .FirstOrDefault(wt => wt.Kind == WallKind.Basic);
+                        return wallType?.Id.IntegerValue ?? 123456;
+
+                    case "floor":
+                        var floorType = new FilteredElementCollector(doc)
+                            .OfClass(typeof(FloorType))
+                            .Cast<FloorType>()
+                            .FirstOrDefault();
+                        return floorType?.Id.IntegerValue ?? 234567;
+
+                    default:
+                        return 123456;
+                }
+            }
+            catch
+            {
+                return 123456;
+            }
+        }
+
+        private int GetLevelIdExample(Document doc)
+        {
+            try
+            {
+                var level = new FilteredElementCollector(doc)
+                    .OfClass(typeof(Level))
+                    .Cast<Level>()
+                    .FirstOrDefault();
+                return level?.Id.IntegerValue ?? 789;
+            }
+            catch
+            {
+                return 789;
+            }
+        }
+
+        private string GetAvailableTypesInfo(string elementType, Document doc)
+        {
+            try
+            {
+                switch (elementType.ToLower())
+                {
+                    case "wall":
+                        var wallTypes = new FilteredElementCollector(doc)
+                            .OfClass(typeof(WallType))
+                            .Cast<WallType>()
+                            .Where(wt => wt.Kind == WallKind.Basic)
+                            .Take(5)
+                            .Select(wt => $"ID: {wt.Id.IntegerValue}, 名称: {wt.Name}")
+                            .ToList();
+
+                        return wallTypes.Any()
+                            ? $"可用墙体类型示例：\n{string.Join("\n", wallTypes)}"
+                            : "支持 Revit 2019-2025 版本";
+
+                    case "floor":
+                        var floorTypes = new FilteredElementCollector(doc)
+                            .OfClass(typeof(FloorType))
+                            .Cast<FloorType>()
+                            .Take(5)
+                            .Select(ft => $"ID: {ft.Id.IntegerValue}, 名称: {ft.Name}")
+                            .ToList();
+
+                        return floorTypes.Any()
+                            ? $"可用楼板类型示例：\n{string.Join("\n", floorTypes)}"
+                            : "支持 Revit 2019-2025 版本";
+
+                    default:
+                        return "支持 Revit 2019-2025 版本";
+                }
+            }
+            catch
+            {
+                return "支持 Revit 2019-2025 版本";
+            }
+        }
+
+        #endregion
     }
 }
