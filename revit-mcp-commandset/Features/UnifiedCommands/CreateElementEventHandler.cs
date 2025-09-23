@@ -5,6 +5,7 @@ using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPCommandSet.Models.Geometry;
 using RevitMCPCommandSet.Features.UnifiedCommands.Models;
+using RevitMCPCommandSet.Features.UnifiedCommands.Utils;
 using RevitMCPCommandSet.Features.SystemElementCreation.Models;
 using RevitMCPCommandSet.Utils.FamilyCreation;
 using RevitMCPCommandSet.Utils.SystemCreation;
@@ -40,8 +41,8 @@ namespace RevitMCPCommandSet.Features.UnifiedCommands
             {
                 var doc = uiapp.ActiveUIDocument.Document;
 
-                // 1. 统一参数验证
-                var validationError = ElementValidationService.Validate(_parameters);
+                // 1. 统一参数验证（仅检查必需参数）
+                var validationError = ElementUtilityService.ValidateRequiredParameters(_parameters);
                 if (!string.IsNullOrEmpty(validationError))
                 {
                     _result = new AIResult<object>
@@ -62,7 +63,7 @@ namespace RevitMCPCommandSet.Features.UnifiedCommands
                         Element createdElement = null;
 
                         // 3. 判断元素类别
-                        var elementClass = DetermineElementClass(doc, _parameters);
+                        var elementClass = ElementUtilityService.DetermineElementClass(doc, _parameters);
 
                         // 4. 根据类别调用对应Creator
                         if (elementClass == "System")
@@ -115,37 +116,6 @@ namespace RevitMCPCommandSet.Features.UnifiedCommands
             }
         }
 
-        /// <summary>
-        /// 确定元素类别（含自动检测）
-        /// </summary>
-        private string DetermineElementClass(Document doc, ElementCreationParameters param)
-        {
-            // 1. 显式指定优先
-            if (!string.IsNullOrEmpty(param.ElementClass))
-                return param.ElementClass;
-
-            // 2. 根据SystemOptions判断
-            if (param.SystemOptions?.ElementType != null)
-                return "System";
-
-            // 3. 根据FamilyOptions判断
-            if (param.FamilyOptions != null &&
-                (param.FamilyOptions.LocationPoint != null ||
-                 param.FamilyOptions.LocationLine != null))
-                return "Family";
-
-            // 4. 自动检测TypeId
-            if (param.TypeId > 0)
-            {
-                var element = doc.GetElement(new ElementId(param.TypeId));
-                if (element is FamilySymbol)
-                    return "Family";
-                if (element is WallType || element is FloorType)
-                    return "System";
-            }
-
-            return null;
-        }
 
         /// <summary>
         /// 转换为SystemElementParameters

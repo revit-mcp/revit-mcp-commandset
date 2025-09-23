@@ -1,12 +1,14 @@
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPCommandSet.Features.SystemElementCreation.Models;
+using RevitMCPCommandSet.Features.UnifiedCommands.Utils;
 using System;
 
 namespace RevitMCPCommandSet.Utils.SystemCreation
 {
     /// <summary>
-    /// 系统族元素参数验证器
+    /// 系统族元素参数验证器（已过时，请使用ElementUtilityService）
     /// </summary>
+    [Obsolete("请使用 ElementUtilityService 代替")]
     public static class SystemElementValidator
     {
         /// <summary>
@@ -117,37 +119,23 @@ namespace RevitMCPCommandSet.Utils.SystemCreation
         }
 
         /// <summary>
-        /// 获取元素类型的友好名称
+        /// 获取元素类型的友好名称（调用统一工具服务）
         /// </summary>
         /// <param name="elementType">元素类型字符串</param>
         /// <returns>友好名称</returns>
         public static string GetFriendlyName(string elementType)
         {
-            switch (elementType?.ToLower())
-            {
-                case "wall": return "墙体";
-                case "floor": return "楼板";
-                case "ceiling": return "天花板";
-                case "roof": return "屋顶";
-                default: return elementType ?? "未知类型";
-            }
+            return ElementUtilityService.GetFriendlyName(elementType);
         }
 
         /// <summary>
-        /// 检查元素类型是否受支持
+        /// 检查元素类型是否受支持（调用统一工具服务）
         /// </summary>
         /// <param name="elementType">元素类型字符串</param>
         /// <returns>是否受支持</returns>
         public static bool IsElementTypeSupported(string elementType)
         {
-            switch (elementType?.ToLower())
-            {
-                case "wall":
-                case "floor":
-                    return true;
-                default:
-                    return false;
-            }
+            return ElementUtilityService.IsElementTypeSupported(elementType);
         }
     }
 }

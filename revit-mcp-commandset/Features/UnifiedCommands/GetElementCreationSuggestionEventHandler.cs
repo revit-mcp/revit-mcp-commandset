@@ -5,6 +5,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPCommandSet.Features.UnifiedCommands.Models;
+using RevitMCPCommandSet.Features.UnifiedCommands.Utils;
 using RevitMCPCommandSet.Features.FamilyInstanceCreation;
 using RevitMCPCommandSet.Features.SystemElementCreation;
 using RevitMCPSDK.API.Interfaces;
@@ -181,38 +182,39 @@ namespace RevitMCPCommandSet.Features.UnifiedCommands
         /// </summary>
         private AIResult<object> AutoDetectAndGetSuggestions(Document doc, int elementId)
         {
-            var element = doc.GetElement(new ElementId(elementId));
-            if (element == null)
+            // 使用统一类型检测
+            var elementClass = ElementUtilityService.DetectElementClassById(doc, elementId);
+
+            if (elementClass == null)
             {
                 return new AIResult<object>
                 {
                     Success = false,
-                    Message = $"ElementId {elementId} 无效，未找到对应的元素"
+                    Message = $"ElementId {elementId} 无效或不是有效的创建类型"
                 };
             }
 
-            if (element is FamilySymbol)
+            switch (elementClass)
             {
-                // 是族类型，获取族建议
-                return GetFamilySuggestions(doc, elementId);
-            }
-            else if (element is WallType || element is FloorType)
-            {
-                // 是系统族类型，获取系统族建议
-                var systemParams = new ElementSuggestionParameters
-                {
-                    ElementClass = "System",
-                    ElementId = elementId
-                };
-                return GetSystemSuggestions(doc, systemParams);
-            }
-            else
-            {
-                return new AIResult<object>
-                {
-                    Success = false,
-                    Message = $"ElementId {elementId} 不是有效的创建类型。当前元素类型: {element.GetType().Name}。支持的类型：FamilySymbol（族类型）、WallType（墙体类型）、FloorType（楼板类型）"
-                };
+                case "Family":
+                    // 是族类型，获取族建议
+                    return GetFamilySuggestions(doc, elementId);
+
+                case "System":
+                    // 是系统族类型，获取系统族建议
+                    var systemParams = new ElementSuggestionParameters
+                    {
+                        ElementClass = "System",
+                        ElementId = elementId
+                    };
+                    return GetSystemSuggestions(doc, systemParams);
+
+                default:
+                    return new AIResult<object>
+                    {
+                        Success = false,
+                        Message = $"不支持的元素类型: {elementClass}"
+                    };
             }
         }
 
