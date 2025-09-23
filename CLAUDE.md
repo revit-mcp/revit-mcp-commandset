@@ -39,27 +39,40 @@ revit-mcp-commandset/
 ├── Features/                  # 功能模块目录（按功能组织）
 │   ├── ElementFilter/         # 元素过滤功能模块
 │   │   ├── AIElementFilterCommand.cs
-│   │   └── AIElementFilterEventHandler.cs
+│   │   ├── AIElementFilterEventHandler.cs
+│   │   └── Models/           # 元素过滤模型
+│   │       └── FilterSetting.cs
 │   ├── ElementOperation/      # 元素操作功能模块
 │   │   ├── OperateElementCommand.cs
-│   │   └── OperateElementEventHandler.cs
+│   │   ├── OperateElementEventHandler.cs
+│   │   └── Models/           # 元素操作模型
+│   │       └── OperationSetting.cs
 │   ├── FamilyInstanceCreation/ # 族实例创建功能模块
 │   │   ├── CreateFamilyInstanceCommand.cs
 │   │   ├── CreateFamilyInstanceEventHandler.cs
 │   │   ├── GetFamilyCreationSuggestionCommand.cs
-│   │   └── GetFamilyCreationSuggestionEventHandler.cs
-│   └── SystemElementCreation/ # 系统族创建功能模块
-│       ├── CreateSystemElementCommand.cs
-│       ├── CreateSystemElementEventHandler.cs
-│       ├── GetSystemElementSuggestionCommand.cs
-│       └── GetSystemElementSuggestionEventHandler.cs
+│   │   ├── GetFamilyCreationSuggestionEventHandler.cs
+│   │   └── Models/           # 族创建模型
+│   │       └── FamilyCreationParameters.cs
+│   ├── SystemElementCreation/ # 系统族创建功能模块
+│   │   ├── CreateSystemElementCommand.cs
+│   │   ├── CreateSystemElementEventHandler.cs
+│   │   ├── GetSystemElementSuggestionCommand.cs
+│   │   ├── GetSystemElementSuggestionEventHandler.cs
+│   │   └── Models/           # 系统族创建模型
+│   │       ├── SystemElementParameters.cs
+│   │       ├── WallSpecificParameters.cs
+│   │       └── FloorSpecificParameters.cs
+│   └── RevitStatus/          # Revit状态功能模块
+│       ├── GetRevitStatusCommand.cs
+│       ├── GetRevitStatusEventHandler.cs
+│       └── Models/           # 状态模型
+│           └── RevitStatusInfo.cs
 ├── Models/                    # 数据模型层
 │   ├── Common/               # 通用模型
 │   │   ├── AIResult.cs
-│   │   ├── FilterSetting.cs
-│   │   ├── OperationSetting.cs
 │   │   ├── CreationRequirements.cs
-│   │   └── SystemElementParameters.cs
+│   │   └── ParameterInfo.cs
 │   └── Geometry/             # 几何模型
 │       ├── JZPoint.cs
 │       ├── JZLine.cs
@@ -223,7 +236,7 @@ public class AIResult<T>
 
 4. **创建数据模型（如需要）**
    ```bash
-   Models/Common/YourDataModel.cs
+   Features/YourNewFeature/Models/YourDataModel.cs
    ```
 
 5. **更新 command.json**
@@ -242,10 +255,12 @@ public class AIResult<T>
 - **FamilyInstanceCreation**: 族实例创建和参数建议功能
 - **SystemElementCreation**: 系统族创建和参数建议功能
 - **ElementOperation**: 元素操作相关功能
+- **RevitStatus**: Revit状态查询功能
 
 ### 命名空间规范
 
 - 功能模块命名空间：`RevitMCPCommandSet.Features.{ModuleName}`
+- 模块模型命名空间：`RevitMCPCommandSet.Features.{ModuleName}.Models`
 - 公共模型命名空间：`RevitMCPCommandSet.Models.Common`
 - 几何模型命名空间：`RevitMCPCommandSet.Models.Geometry`
 - 工具类命名空间：`RevitMCPCommandSet.Utils`
@@ -283,6 +298,13 @@ A: 在 Features 下创建新目录，将相关的 Command 和 EventHandler 放�
 
 基于 Git 历史记录的最新进展（截至 2025-09-23）：
 
+### v2.3.0 - Models架构重组完成 (2025-09-23)
+- 🗂️ **Models文件夹重组**：将模块特定Models移至各功能模块下
+- 📁 **架构清晰化**：Features\[Module]\Models结构，提升模块独立性
+- 🔧 **命名空间优化**：统一模块Models命名空间规范
+- ✅ **编译验证通过**：R20+x64平台兼容性确认
+- 📚 **文档同步更新**：CLAUDE.md反映最新目录结构
+
 ### v2.2.0 - SystemElementCreation 重构完成 (2025-09-23)
 - 🎉 **完成系统族创建模块重构**：采用MCP友好的组合模式设计
 - 🔧 **重构SystemElementParameters**：改用字符串elementType和组合模式
@@ -314,5 +336,6 @@ A: 在 Features 下创建新目录，将相关的 Command 和 EventHandler 放�
 - [系统族创建功能文档](./revit-mcp-commandset/Features/SystemElementCreation/README.md)
 - [元素过滤器文档](./revit-mcp-commandset/Features/ElementFilter/README.md)
 - [元素操作器文档](./revit-mcp-commandset/Features/ElementOperation/README.md)
+- [Revit状态功能文档](./revit-mcp-commandset/Features/RevitStatus/README.md)
 - [族创建工具模块文档](./revit-mcp-commandset/Utils/FamilyCreation/README.md)
 - [系统族创建工具模块文档](./revit-mcp-commandset/Utils/SystemCreation/README.md)
