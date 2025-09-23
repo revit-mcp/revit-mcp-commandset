@@ -18,7 +18,7 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
     {
         private readonly ManualResetEvent _resetEvent = new ManualResetEvent(false);
         private string _elementType;
-        private int _typeId;
+        private int _elementId;
         private bool _returnAll;
         private AIResult<object> _result;
 
@@ -27,14 +27,14 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
         public void SetElementType(string elementType)
         {
             _elementType = elementType;
-            _typeId = 0;
+            _elementId = 0;
             _returnAll = false;
             _resetEvent.Reset();
         }
 
-        public void SetTypeId(int typeId)
+        public void SetElementId(int elementId)
         {
-            _typeId = typeId;
+            _elementId = elementId;
             _elementType = null;
             _returnAll = false;
             _resetEvent.Reset();
@@ -44,7 +44,7 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
         {
             _returnAll = returnAll;
             _elementType = null;
-            _typeId = 0;
+            _elementId = 0;
             _resetEvent.Reset();
         }
 
@@ -93,11 +93,31 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
                         Response = suggestion
                     };
                 }
-                else if (_typeId > 0)
+                else if (_elementId > 0)
                 {
-                    // 根据TypeId分析类型并返回建议
-                    var element = doc.GetElement(new ElementId(_typeId));
-                    if (element is WallType)
+                    // 根据ElementId分析类型并返回建议
+                    var element = doc.GetElement(new ElementId(_elementId));
+                    if (element == null)
+                    {
+                        _result = new AIResult<object>
+                        {
+                            Success = false,
+                            Message = $"ElementId {_elementId} 无效，未找到对应的元素"
+                        };
+                        return;
+                    }
+
+                    // 判断是否为族类型
+                    if (element is FamilySymbol)
+                    {
+                        _result = new AIResult<object>
+                        {
+                            Success = false,
+                            Message = $"ElementId {_elementId} 是族类型（如门、窗、家具等），请使用 'get_family_creation_suggestion' 命令获取族创建建议。系统族建议仅支持墙体、楼板等系统族类型。"
+                        };
+                        return;
+                    }
+                    else if (element is WallType)
                     {
                         var suggestion = GenerateSuggestion("wall", doc);
                         suggestion.FamilyName = element.Name;
@@ -126,7 +146,7 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
                         _result = new AIResult<object>
                         {
                             Success = false,
-                            Message = $"TypeId {_typeId} 不是有效的系统族类型"
+                            Message = $"ElementId {_elementId} 不是有效的系统族类型。当前元素类型: {element.GetType().Name}。支持的系统族类型：WallType（墙体类型）、FloorType（楼板类型）"
                         };
                     }
                 }

@@ -43,11 +43,11 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
                     var elementTypeStr = elementTypeToken.ToString();
                     _handler.SetElementType(elementTypeStr);
                 }
-                // 尝试获取typeId
-                else if (dataToken["typeId"] != null)
+                // 尝试获取elementId
+                else if (dataToken["elementId"] != null)
                 {
-                    var typeId = dataToken["typeId"].Value<int>();
-                    _handler.SetTypeId(typeId);
+                    var elementId = dataToken["elementId"].Value<int>();
+                    _handler.SetElementId(elementId);
                 }
                 else
                 {
