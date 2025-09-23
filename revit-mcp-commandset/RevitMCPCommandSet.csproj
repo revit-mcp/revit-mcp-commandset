@@ -14,26 +14,32 @@
     <PropertyGroup Condition="$(Configuration.Contains('R20'))">
         <RevitVersion>2020</RevitVersion>
         <TargetFramework>net48</TargetFramework>
+        <DefineConstants>REVIT2019;REVIT2020</DefineConstants>
     </PropertyGroup>
     <PropertyGroup Condition="$(Configuration.Contains('R21'))">
         <RevitVersion>2021</RevitVersion>
         <TargetFramework>net48</TargetFramework>
+        <DefineConstants>REVIT2019;REVIT2020;REVIT2021</DefineConstants>
     </PropertyGroup>
     <PropertyGroup Condition="$(Configuration.Contains('R22'))">
         <RevitVersion>2022</RevitVersion>
         <TargetFramework>net48</TargetFramework>
+        <DefineConstants>REVIT2019;REVIT2020;REVIT2021;REVIT2022</DefineConstants>
     </PropertyGroup>
     <PropertyGroup Condition="$(Configuration.Contains('R23'))">
         <RevitVersion>2023</RevitVersion>
         <TargetFramework>net48</TargetFramework>
+        <DefineConstants>REVIT2019;REVIT2020;REVIT2021;REVIT2022;REVIT2023</DefineConstants>
     </PropertyGroup>
     <PropertyGroup Condition="$(Configuration.Contains('R24'))">
         <RevitVersion>2024</RevitVersion>
         <TargetFramework>net48</TargetFramework>
+        <DefineConstants>REVIT2019;REVIT2020;REVIT2021;REVIT2022;REVIT2023;REVIT2024</DefineConstants>
     </PropertyGroup>
     <PropertyGroup Condition="$(Configuration.Contains('R25'))">
         <RevitVersion>2025</RevitVersion>
         <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+        <DefineConstants>REVIT2019;REVIT2020;REVIT2021;REVIT2022;REVIT2023;REVIT2024;REVIT2025</DefineConstants>
     </PropertyGroup>
 
     <PropertyGroup>

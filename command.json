@@ -57,6 +57,16 @@
       "commandName": "create_family_instance",
       "description": "Create a family instance with specified parameters",
       "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "create_system_element",
+      "description": "Create system family elements (walls, floors, etc.)",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "get_system_element_suggestion",
+      "description": "Get parameter requirements for creating system family elements",
+      "assemblyPath": "RevitMCPCommandSet.dll"
     }
   ]
 }
