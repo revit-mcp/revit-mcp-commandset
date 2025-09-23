@@ -56,7 +56,7 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
                 if (_returnAll)
                 {
                     // 返回所有支持的系统族类型建议
-                    var allSuggestions = new List<FamilyCreationRequirements>();
+                    var allSuggestions = new List<CreationRequirements>();
                     var supportedTypes = new[] { "wall", "floor" };
 
                     foreach (var elementType in supportedTypes)
@@ -155,9 +155,9 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
         /// <summary>
         /// 生成参数建议
         /// </summary>
-        private FamilyCreationRequirements GenerateSuggestion(string elementType, Document doc)
+        private CreationRequirements GenerateSuggestion(string elementType, Document doc)
         {
-            var suggestion = new FamilyCreationRequirements
+            var suggestion = new CreationRequirements
             {
                 TypeId = 0, // 用户需要指定具体的类型ID
                 FamilyName = SystemElementValidator.GetFriendlyName(elementType),
@@ -228,36 +228,18 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
         /// </summary>
         private void AddWallParameters(Dictionary<string, ParameterInfo> parameters)
         {
-            parameters["wallLine"] = new ParameterInfo
+            parameters["wallParameters"] = new ParameterInfo
             {
-                Type = "JZLine",
-                Description = "墙体路径线段（毫米）",
-                Example = new { p0 = new { x = 0, y = 0, z = 0 }, p1 = new { x = 5000, y = 0, z = 0 } },
+                Type = "WallSpecificParameters",
+                Description = "墙体特有参数（包含路径、高度、偏移等）",
+                Example = new
+                {
+                    line = new { p0 = new { x = 0, y = 0, z = 0 }, p1 = new { x = 5000, y = 0, z = 0 } },
+                    height = 3000.0,
+                    baseOffset = 0.0,
+                    autoJoinWalls = true
+                },
                 IsRequired = true
-            };
-
-            parameters["height"] = new ParameterInfo
-            {
-                Type = "double",
-                Description = "墙体高度（毫米）",
-                Example = 3000.0,
-                IsRequired = true
-            };
-
-            parameters["baseOffset"] = new ParameterInfo
-            {
-                Type = "double",
-                Description = "底部偏移（毫米）",
-                Example = 0.0,
-                IsRequired = false
-            };
-
-            parameters["autoJoinWalls"] = new ParameterInfo
-            {
-                Type = "bool",
-                Description = "自动连接相邻墙体",
-                Example = true,
-                IsRequired = false
             };
         }
 
@@ -266,34 +248,23 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
         /// </summary>
         private void AddFloorParameters(Dictionary<string, ParameterInfo> parameters)
         {
-            parameters["floorBoundary"] = new ParameterInfo
+            parameters["floorParameters"] = new ParameterInfo
             {
-                Type = "JZPoint[]",
-                Description = "楼板边界点列表（毫米，按顺序连接）",
-                Example = new[]
+                Type = "FloorSpecificParameters",
+                Description = "楼板特有参数（包含边界、偏移、坡度等）",
+                Example = new
                 {
-                    new { x = 0, y = 0, z = 0 },
-                    new { x = 5000, y = 0, z = 0 },
-                    new { x = 5000, y = 5000, z = 0 },
-                    new { x = 0, y = 5000, z = 0 }
+                    boundary = new[]
+                    {
+                        new { x = 0, y = 0, z = 0 },
+                        new { x = 5000, y = 0, z = 0 },
+                        new { x = 5000, y = 5000, z = 0 },
+                        new { x = 0, y = 5000, z = 0 }
+                    },
+                    topOffset = 0.0,
+                    slope = 2.0
                 },
                 IsRequired = true
-            };
-
-            parameters["topOffset"] = new ParameterInfo
-            {
-                Type = "double",
-                Description = "顶部偏移（毫米）",
-                Example = 0.0,
-                IsRequired = false
-            };
-
-            parameters["slope"] = new ParameterInfo
-            {
-                Type = "double",
-                Description = "楼板坡度（百分比，可选）",
-                Example = 2.0,
-                IsRequired = false
             };
         }
 

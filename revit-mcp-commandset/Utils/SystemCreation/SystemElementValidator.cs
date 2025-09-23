@@ -49,22 +49,25 @@ namespace RevitMCPCommandSet.Utils.SystemCreation
         /// </summary>
         private static string ValidateWallParameters(SystemElementParameters parameters)
         {
-            if (parameters.WallLine == null)
-                return "墙体创建需要指定路径线段（wallLine）";
+            if (parameters.WallParameters == null)
+                return "墙体创建需要指定墙体参数（wallParameters）";
 
-            if (parameters.WallLine.P0 == null || parameters.WallLine.P1 == null)
+            if (parameters.WallParameters.Line == null)
+                return "墙体创建需要指定路径线段（wallParameters.line）";
+
+            if (parameters.WallParameters.Line.P0 == null || parameters.WallParameters.Line.P1 == null)
                 return "墙体路径线段的起点（P0）和终点（P1）不能为空";
 
             // 检查起点和终点是否重合
-            var p0 = parameters.WallLine.P0;
-            var p1 = parameters.WallLine.P1;
+            var p0 = parameters.WallParameters.Line.P0;
+            var p1 = parameters.WallParameters.Line.P1;
             if (Math.Abs(p0.X - p1.X) < 1 && Math.Abs(p0.Y - p1.Y) < 1 && Math.Abs(p0.Z - p1.Z) < 1)
                 return "墙体路径的起点和终点不能重合（最小距离1毫米）";
 
-            if (!parameters.Height.HasValue || parameters.Height.Value <= 0)
-                return "墙体高度必须大于0（height）";
+            if (parameters.WallParameters.Height <= 0)
+                return "墙体高度必须大于0（wallParameters.height）";
 
-            if (parameters.Height.Value > 100000) // 最大100米
+            if (parameters.WallParameters.Height > 100000) // 最大100米
                 return "墙体高度不能超过100米（100000毫米）";
 
             return null; // 验证通过
@@ -75,23 +78,26 @@ namespace RevitMCPCommandSet.Utils.SystemCreation
         /// </summary>
         private static string ValidateFloorParameters(SystemElementParameters parameters)
         {
-            if (parameters.FloorBoundary == null || parameters.FloorBoundary.Count < 3)
-                return "楼板边界至少需要3个点（floorBoundary）";
+            if (parameters.FloorParameters == null)
+                return "楼板创建需要指定楼板参数（floorParameters）";
 
-            if (parameters.FloorBoundary.Count > 1000)
+            if (parameters.FloorParameters.Boundary == null || parameters.FloorParameters.Boundary.Count < 3)
+                return "楼板边界至少需要3个点（floorParameters.boundary）";
+
+            if (parameters.FloorParameters.Boundary.Count > 1000)
                 return "楼板边界点数过多，最多支持1000个点";
 
             // 检查边界点是否有效
-            for (int i = 0; i < parameters.FloorBoundary.Count; i++)
+            for (int i = 0; i < parameters.FloorParameters.Boundary.Count; i++)
             {
-                var point = parameters.FloorBoundary[i];
+                var point = parameters.FloorParameters.Boundary[i];
                 if (point == null)
                     return $"楼板边界第{i + 1}个点为空";
 
                 // 检查是否有重复点（相邻点距离小于1毫米）
                 if (i > 0)
                 {
-                    var prevPoint = parameters.FloorBoundary[i - 1];
+                    var prevPoint = parameters.FloorParameters.Boundary[i - 1];
                     if (Math.Abs(point.X - prevPoint.X) < 1 &&
                         Math.Abs(point.Y - prevPoint.Y) < 1 &&
                         Math.Abs(point.Z - prevPoint.Z) < 1)
@@ -100,9 +106,9 @@ namespace RevitMCPCommandSet.Utils.SystemCreation
             }
 
             // 检查坡度值
-            if (parameters.Slope.HasValue)
+            if (parameters.FloorParameters.Slope.HasValue)
             {
-                if (parameters.Slope.Value < -45 || parameters.Slope.Value > 45)
+                if (parameters.FloorParameters.Slope.Value < -45 || parameters.FloorParameters.Slope.Value > 45)
                     return "楼板坡度应在-45%到45%之间";
             }
 

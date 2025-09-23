@@ -55,10 +55,10 @@ namespace RevitMCPCommandSet.Utils.SystemCreation
         private Wall CreateWall(SystemElementParameters parameters)
         {
             // 参数已经在Create方法中验证过，这里只做必要的检查
-            if (parameters.WallLine == null)
+            if (parameters.WallParameters?.Line == null)
                 throw new ArgumentException("墙体创建需要指定路径线段");
 
-            if (!parameters.Height.HasValue || parameters.Height.Value <= 0)
+            if (parameters.WallParameters.Height <= 0)
                 throw new ArgumentException("墙体高度必须大于0");
 
             // 获取墙体类型
@@ -70,13 +70,13 @@ namespace RevitMCPCommandSet.Utils.SystemCreation
             Level level = GetOrFindLevel(parameters);
 
             // 转换坐标（毫米转英尺）
-            var startPoint = JZPoint.ToXYZ(parameters.WallLine.P0);
-            var endPoint = JZPoint.ToXYZ(parameters.WallLine.P1);
+            var startPoint = JZPoint.ToXYZ(parameters.WallParameters.Line.P0);
+            var endPoint = JZPoint.ToXYZ(parameters.WallParameters.Line.P1);
             var line = Line.CreateBound(startPoint, endPoint);
 
             // 转换高度和偏移（毫米转英尺）
-            double heightInFeet = parameters.Height.Value / 304.8;
-            double offsetInFeet = parameters.BaseOffset / 304.8;
+            double heightInFeet = parameters.WallParameters.Height / 304.8;
+            double offsetInFeet = parameters.WallParameters.BaseOffset / 304.8;
 
             Wall wall = null;
 
@@ -97,7 +97,7 @@ namespace RevitMCPCommandSet.Utils.SystemCreation
 #endif
 
             // 自动连接相邻墙体
-            if (parameters.AutoJoinWalls && wall != null)
+            if (parameters.WallParameters.AutoJoinWalls && wall != null)
             {
                 JoinNearbyWalls(wall);
             }
@@ -167,7 +167,7 @@ namespace RevitMCPCommandSet.Utils.SystemCreation
         private Floor CreateFloor(SystemElementParameters parameters)
         {
             // 验证参数
-            if (parameters.FloorBoundary == null || parameters.FloorBoundary.Count < 3)
+            if (parameters.FloorParameters?.Boundary == null || parameters.FloorParameters.Boundary.Count < 3)
                 throw new ArgumentException("楼板边界至少需要3个点");
 
             // 获取楼板类型
@@ -180,10 +180,10 @@ namespace RevitMCPCommandSet.Utils.SystemCreation
 
             // 创建轮廓线
             var curveArray = new CurveArray();
-            for (int i = 0; i < parameters.FloorBoundary.Count; i++)
+            for (int i = 0; i < parameters.FloorParameters.Boundary.Count; i++)
             {
-                var startPoint = JZPoint.ToXYZ(parameters.FloorBoundary[i]);
-                var endPoint = JZPoint.ToXYZ(parameters.FloorBoundary[(i + 1) % parameters.FloorBoundary.Count]);
+                var startPoint = JZPoint.ToXYZ(parameters.FloorParameters.Boundary[i]);
+                var endPoint = JZPoint.ToXYZ(parameters.FloorParameters.Boundary[(i + 1) % parameters.FloorParameters.Boundary.Count]);
 
                 var line = Line.CreateBound(startPoint, endPoint);
                 curveArray.Append(line);
@@ -195,20 +195,7 @@ namespace RevitMCPCommandSet.Utils.SystemCreation
 
             Floor floor = null;
 
-#if REVIT2019 || REVIT2020 || REVIT2021
-            // Revit 2019-2021 使用旧API
-            floor = _document.Create.NewFloor(curveArray, floorType, level, parameters.IsStructural);
-
-            // 设置顶部偏移
-            if (parameters.TopOffset != 0)
-            {
-                var param = floor.get_Parameter(BuiltInParameter.FLOOR_HEIGHTABOVELEVEL_PARAM);
-                if (param != null && !param.IsReadOnly)
-                {
-                    param.Set(parameters.TopOffset / 304.8); // 毫米转英尺
-                }
-            }
-#elif REVIT2022 || REVIT2023 || REVIT2024 || REVIT2025
+#if REVIT2022 || REVIT2023 || REVIT2024 || REVIT2025
             // Revit 2022+ 使用新API
             var curveLoop = new CurveLoop();
             foreach (Curve curve in curveArray)
@@ -220,22 +207,33 @@ namespace RevitMCPCommandSet.Utils.SystemCreation
             floor = Floor.Create(_document, curveLoops, floorType.Id, level.Id);
 
             // 设置偏移
-            if (parameters.TopOffset != 0)
+            if (parameters.FloorParameters.TopOffset != 0)
             {
                 var param = floor.get_Parameter(BuiltInParameter.FLOOR_HEIGHTABOVELEVEL_PARAM);
                 if (param != null && !param.IsReadOnly)
                 {
-                    param.Set(parameters.TopOffset / 304.8);
+                    param.Set(parameters.FloorParameters.TopOffset / 304.8);
                 }
             }
 #else
-            throw new NotSupportedException("当前Revit版本不支持");
+            // Revit 2019-2021 使用旧API
+            floor = _document.Create.NewFloor(curveArray, floorType, level, parameters.IsStructural);
+
+            // 设置顶部偏移
+            if (parameters.FloorParameters.TopOffset != 0)
+            {
+                var param = floor.get_Parameter(BuiltInParameter.FLOOR_HEIGHTABOVELEVEL_PARAM);
+                if (param != null && !param.IsReadOnly)
+                {
+                    param.Set(parameters.FloorParameters.TopOffset / 304.8); // 毫米转英尺
+                }
+            }
 #endif
 
             // 设置坡度（如果指定）
-            if (parameters.Slope.HasValue && floor != null)
+            if (parameters.FloorParameters.Slope.HasValue && floor != null)
             {
-                SetFloorSlope(floor, parameters.Slope.Value);
+                SetFloorSlope(floor, parameters.FloorParameters.Slope.Value);
             }
 
             return floor;
@@ -296,13 +294,13 @@ namespace RevitMCPCommandSet.Utils.SystemCreation
             {
                 // 获取参考高度（墙使用线段起点Z，楼板使用第一个点Z）
                 double referenceZ = 0;
-                if (parameters.WallLine != null)
+                if (parameters.WallParameters?.Line != null)
                 {
-                    referenceZ = parameters.WallLine.P0.Z;
+                    referenceZ = parameters.WallParameters.Line.P0.Z;
                 }
-                else if (parameters.FloorBoundary != null && parameters.FloorBoundary.Count > 0)
+                else if (parameters.FloorParameters?.Boundary != null && parameters.FloorParameters.Boundary.Count > 0)
                 {
-                    referenceZ = parameters.FloorBoundary[0].Z;
+                    referenceZ = parameters.FloorParameters.Boundary[0].Z;
                 }
 
                 var nearestLevel = GetNearestLevel(referenceZ / 304.8); // 毫米转英尺

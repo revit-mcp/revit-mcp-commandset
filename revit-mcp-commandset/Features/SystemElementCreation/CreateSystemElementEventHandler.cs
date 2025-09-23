@@ -108,9 +108,9 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
         /// <summary>
         /// 生成参数建议
         /// </summary>
-        private FamilyCreationRequirements GenerateSuggestion(string elementType, string errorMessage)
+        private CreationRequirements GenerateSuggestion(string elementType, string errorMessage)
         {
-            var suggestion = new FamilyCreationRequirements
+            var suggestion = new CreationRequirements
             {
                 TypeId = 0, // 用户需要指定具体的类型ID
                 FamilyName = SystemElementValidator.GetFriendlyName(elementType),

@@ -326,12 +326,12 @@ namespace RevitMCPCommandSet.Features.FamilyInstanceCreation
         /// <summary>
         /// 分析族类型的参数要求
         /// </summary>
-        private FamilyCreationRequirements AnalyzeRequirements(FamilySymbol symbol)
+        private CreationRequirements AnalyzeRequirements(FamilySymbol symbol)
         {
             if (symbol == null)
-                return new FamilyCreationRequirements { Message = "族类型无效" };
+                return new CreationRequirements { Message = "族类型无效" };
 
-            var requirements = new FamilyCreationRequirements
+            var requirements = new CreationRequirements
             {
                 TypeId = symbol.Id.IntegerValue,
                 FamilyName = symbol.FamilyName,
@@ -374,7 +374,7 @@ namespace RevitMCPCommandSet.Features.FamilyInstanceCreation
             return requirements;
         }
 
-        private void AddOneLevelBasedParameters(FamilyCreationRequirements requirements)
+        private void AddOneLevelBasedParameters(CreationRequirements requirements)
         {
             requirements.Parameters["typeId"] = new ParameterInfo { Required = true, Description = "族类型ID" };
             requirements.Parameters["locationPoint"] = new ParameterInfo { Required = true, Description = "位置点坐标(毫米)" };
@@ -382,7 +382,7 @@ namespace RevitMCPCommandSet.Features.FamilyInstanceCreation
             requirements.Parameters["baseOffset"] = new ParameterInfo { Required = false, Description = "底部偏移(毫米)" };
         }
 
-        private void AddOneLevelBasedHostedParameters(FamilyCreationRequirements requirements)
+        private void AddOneLevelBasedHostedParameters(CreationRequirements requirements)
         {
             requirements.Parameters["typeId"] = new ParameterInfo { Required = true, Description = "族类型ID" };
             requirements.Parameters["locationPoint"] = new ParameterInfo { Required = true, Description = "位置点坐标(毫米)" };
@@ -392,7 +392,7 @@ namespace RevitMCPCommandSet.Features.FamilyInstanceCreation
             requirements.Parameters["searchRadius"] = new ParameterInfo { Required = false, Description = "搜索半径(毫米，默认1000)" };
         }
 
-        private void AddTwoLevelsBasedParameters(FamilyCreationRequirements requirements)
+        private void AddTwoLevelsBasedParameters(CreationRequirements requirements)
         {
             requirements.Parameters["typeId"] = new ParameterInfo { Required = true, Description = "族类型ID" };
             requirements.Parameters["locationPoint"] = new ParameterInfo { Required = true, Description = "位置点坐标(毫米)" };
@@ -402,7 +402,7 @@ namespace RevitMCPCommandSet.Features.FamilyInstanceCreation
             requirements.Parameters["topOffset"] = new ParameterInfo { Required = false, Description = "顶部偏移(毫米)" };
         }
 
-        private void AddWorkPlaneBasedParameters(FamilyCreationRequirements requirements)
+        private void AddWorkPlaneBasedParameters(CreationRequirements requirements)
         {
             requirements.Parameters["typeId"] = new ParameterInfo { Required = true, Description = "族类型ID" };
             requirements.Parameters["locationPoint"] = new ParameterInfo { Required = true, Description = "位置点坐标(毫米)" };
@@ -413,7 +413,7 @@ namespace RevitMCPCommandSet.Features.FamilyInstanceCreation
             requirements.Parameters["searchRadius"] = new ParameterInfo { Required = false, Description = "搜索半径(毫米，默认1000)" };
         }
 
-        private void AddCurveBasedParameters(FamilyCreationRequirements requirements)
+        private void AddCurveBasedParameters(CreationRequirements requirements)
         {
             requirements.Parameters["typeId"] = new ParameterInfo { Required = true, Description = "族类型ID" };
             requirements.Parameters["locationLine"] = new ParameterInfo { Required = true, Description = "基准线坐标(毫米)" };
@@ -422,7 +422,7 @@ namespace RevitMCPCommandSet.Features.FamilyInstanceCreation
             requirements.Parameters["hostCategories"] = new ParameterInfo { Required = false, Description = "宿主类别数组(无标高时需要)" };
         }
 
-        private void AddViewBasedParameters(FamilyCreationRequirements requirements)
+        private void AddViewBasedParameters(CreationRequirements requirements)
         {
             requirements.Parameters["typeId"] = new ParameterInfo { Required = true, Description = "族类型ID" };
             requirements.Parameters["locationPoint"] = new ParameterInfo { Required = true, Description = "位置点坐标(毫米)" };

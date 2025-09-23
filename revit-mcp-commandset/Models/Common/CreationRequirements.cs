@@ -6,7 +6,7 @@ namespace RevitMCPCommandSet.Models.Common
     /// <summary>
     /// 族创建参数需求（精简版）
     /// </summary>
-    public class FamilyCreationRequirements
+    public class CreationRequirements
     {
         /// <summary>
         /// 族类型ElementId
@@ -33,7 +33,7 @@ namespace RevitMCPCommandSet.Models.Common
         [JsonProperty("message")]
         public string Message { get; set; }
 
-        public FamilyCreationRequirements()
+        public CreationRequirements()
         {
             Parameters = new Dictionary<string, ParameterInfo>();
         }
