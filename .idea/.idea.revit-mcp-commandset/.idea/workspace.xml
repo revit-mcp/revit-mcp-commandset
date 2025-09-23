@@ -8,9 +8,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4cc9b141-bb6e-4e08-9932-1963fd0d4048" name="更改" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.revit-mcp-commandset/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.revit-mcp-commandset/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.worktree-meta.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/AGENTS.md" beforeDir="false" afterPath="$PROJECT_DIR$/AGENTS.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/revit-mcp-commandset/Features/UnifiedCommands/ElementValidationService.cs" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -98,7 +96,7 @@
       <workItem from="1758250431953" duration="6471000" />
       <workItem from="1758265425486" duration="4604000" />
       <workItem from="1758271564511" duration="5551000" />
-      <workItem from="1758508639263" duration="42147000" />
+      <workItem from="1758508639263" duration="45527000" />
     </task>
     <task id="LOCAL-00001" summary="存档：通用创建mcp命令创建前">
       <option name="closed" value="true" />

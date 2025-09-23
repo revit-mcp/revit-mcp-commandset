@@ -1,6 +1,7 @@
 using Autodesk.Revit.DB;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPCommandSet.Features.SystemElementCreation.Models;
+using RevitMCPCommandSet.Features.UnifiedCommands.Utils;
 using RevitMCPCommandSet.Models.Geometry;
 using RevitMCPCommandSet.Utils.SystemCreation;
 using System;
@@ -29,8 +30,8 @@ namespace RevitMCPCommandSet.Utils.SystemCreation
             if (parameters == null)
                 throw new ArgumentNullException(nameof(parameters));
 
-            // 参数验证
-            var validationError = SystemElementValidator.ValidateParameters(parameters);
+            // 参数验证（使用详细验证保持原有严格性）
+            var validationError = ElementUtilityService.ValidateSystemParametersDetailed(parameters);
             if (!string.IsNullOrEmpty(validationError))
                 throw new ArgumentException(validationError);
 

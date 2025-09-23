@@ -2,6 +2,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPCommandSet.Features.SystemElementCreation.Models;
+using RevitMCPCommandSet.Features.UnifiedCommands.Utils;
 using RevitMCPCommandSet.Utils.SystemCreation;
 using RevitMCPSDK.API.Interfaces;
 using System;
@@ -75,7 +76,7 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
                 else if (!string.IsNullOrEmpty(_elementType))
                 {
                     // 根据元素类型返回建议
-                    if (!SystemElementValidator.IsElementTypeSupported(_elementType))
+                    if (!ElementUtilityService.IsElementTypeSupported(_elementType))
                     {
                         _result = new AIResult<object>
                         {
@@ -89,7 +90,7 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
                     _result = new AIResult<object>
                     {
                         Success = true,
-                        Message = $"获取{SystemElementValidator.GetFriendlyName(_elementType)}创建参数建议成功",
+                        Message = $"获取{ElementUtilityService.GetFriendlyName(_elementType)}创建参数建议成功",
                         Response = suggestion
                     };
                 }
@@ -181,7 +182,7 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
             var suggestion = new CreationRequirements
             {
                 TypeId = 0, // 用户需要指定具体的类型ID
-                FamilyName = SystemElementValidator.GetFriendlyName(elementType),
+                FamilyName = ElementUtilityService.GetFriendlyName(elementType),
                 Parameters = new Dictionary<string, ParameterInfo>()
             };
 
@@ -197,7 +198,7 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
             suggestion.Parameters["typeId"] = new ParameterInfo
             {
                 Type = "int",
-                Description = $"{SystemElementValidator.GetFriendlyName(elementType)}类型ID",
+                Description = $"{ElementUtilityService.GetFriendlyName(elementType)}类型ID",
                 Example = GetTypeIdExample(elementType, doc),
                 IsRequired = true
             };

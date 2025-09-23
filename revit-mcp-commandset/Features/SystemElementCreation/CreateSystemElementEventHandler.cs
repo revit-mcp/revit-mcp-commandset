@@ -2,12 +2,12 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPCommandSet.Features.SystemElementCreation.Models;
+using RevitMCPCommandSet.Features.UnifiedCommands.Utils;
 using RevitMCPCommandSet.Utils.SystemCreation;
 using RevitMCPSDK.API.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using RevitMCPCommandSet.Features.SystemElementCreation.Models;
 
 namespace RevitMCPCommandSet.Features.SystemElementCreation
 {
@@ -41,7 +41,7 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
                 var doc = uiapp.ActiveUIDocument.Document;
 
                 // 参数验证 - 使用SystemElementValidator
-                var validationError = SystemElementValidator.ValidateParameters(_parameters);
+                var validationError = ElementUtilityService.ValidateSystemParametersDetailed(_parameters);
                 if (!string.IsNullOrEmpty(validationError))
                 {
                     _result = new AIResult<object>
@@ -54,7 +54,7 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
                 }
 
                 // 创建元素
-                using (Transaction trans = new Transaction(doc, $"创建{SystemElementValidator.GetFriendlyName(_parameters.ElementType)}"))
+                using (Transaction trans = new Transaction(doc, $"创建{ElementUtilityService.GetFriendlyName(_parameters.ElementType)}"))
                 {
                     trans.Start();
 
@@ -69,7 +69,7 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
                         _result = new AIResult<object>
                         {
                             Success = true,
-                            Message = $"{SystemElementValidator.GetFriendlyName(_parameters.ElementType)} 创建成功",
+                            Message = $"{ElementUtilityService.GetFriendlyName(_parameters.ElementType)} 创建成功",
                             Response = new
                             {
                                 elementId = element.Id.IntegerValue,
@@ -115,7 +115,7 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
             var suggestion = new CreationRequirements
             {
                 TypeId = 0, // 用户需要指定具体的类型ID
-                FamilyName = SystemElementValidator.GetFriendlyName(elementType),
+                FamilyName = ElementUtilityService.GetFriendlyName(elementType),
                 Parameters = new Dictionary<string, ParameterInfo>(),
                 Message = $"当前错误: {errorMessage}"
             };
@@ -132,7 +132,7 @@ namespace RevitMCPCommandSet.Features.SystemElementCreation
             suggestion.Parameters["typeId"] = new ParameterInfo
             {
                 Type = "int",
-                Description = $"{SystemElementValidator.GetFriendlyName(elementType)}类型ID",
+                Description = $"{ElementUtilityService.GetFriendlyName(elementType)}类型ID",
                 Example = 123456,
                 IsRequired = true
             };
