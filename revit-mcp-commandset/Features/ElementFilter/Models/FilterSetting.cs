@@ -64,7 +64,45 @@ namespace RevitMCPCommandSet.Features.ElementFilter.Models
         /// 最大元素数量限制
         /// </summary>
         [JsonProperty("maxElements")]
-        public int MaxElements { get; set; } = 50; 
+        public int MaxElements { get; set; } = 50;
+
+        // ===== 新增字段用于优化功能 =====
+
+        /// <summary>
+        /// 直接查询的元素ID列表
+        /// 如果指定此列表，将直接获取这些元素，可配合其他过滤条件使用
+        /// </summary>
+        [JsonProperty("elementIds")]
+        public List<int> ElementIds { get; set; }
+
+        /// <summary>
+        /// 返回信息的粒度级别
+        /// 可选值: "Minimal", "Basic", "Geometry", "Parameters", "Full", "Custom"
+        /// 默认值: "Minimal" 保持轻量返回
+        /// </summary>
+        [JsonProperty("returnLevel")]
+        public string ReturnLevel { get; set; } = "Minimal";
+
+        /// <summary>
+        /// 参数过滤和返回选项
+        /// 仅在 ReturnLevel 为 "Parameters" 或 "Full" 时生效
+        /// </summary>
+        [JsonProperty("parameterOptions")]
+        public ParameterOptions ParameterOptions { get; set; }
+
+        /// <summary>
+        /// 自定义字段选择列表
+        /// 仅在 ReturnLevel 为 "Custom" 时生效
+        /// </summary>
+        [JsonProperty("includeFields")]
+        public List<string> IncludeFields { get; set; }
+
+        /// <summary>
+        /// 几何信息选项
+        /// 仅在 ReturnLevel 为 "Geometry" 或 "Full" 时生效
+        /// </summary>
+        [JsonProperty("geometryOptions")]
+        public GeometryOptions GeometryOptions { get; set; } 
         /// <summary>
         /// 验证过滤器设置的有效性，检查潜在的冲突
         /// </summary>
@@ -80,13 +118,16 @@ namespace RevitMCPCommandSet.Features.ElementFilter.Models
                 return false;
             }
 
-            // 检查是否至少指定了一个过滤条件
-            if (string.IsNullOrWhiteSpace(FilterCategory) &&
-                string.IsNullOrWhiteSpace(FilterElementType) &&
-                FilterFamilySymbolId <= 0)
+            // 检查是否至少指定了一个过滤条件（elementIds 直查模式除外）
+            if (ElementIds == null || ElementIds.Count == 0)
             {
-                errorMessage = "过滤设置无效: 必须至少指定一个过滤条件(类别、元素类型或族类型)";
-                return false;
+                if (string.IsNullOrWhiteSpace(FilterCategory) &&
+                    string.IsNullOrWhiteSpace(FilterElementType) &&
+                    FilterFamilySymbolId <= 0)
+                {
+                    errorMessage = "过滤设置无效: 必须至少指定一个过滤条件(类别、元素类型或族类型)或提供元素ID列表";
+                    return false;
+                }
             }
 
             // 检查类型元素与某些过滤器的冲突

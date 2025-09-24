@@ -31,6 +31,11 @@ namespace RevitMCPCommandSet.Features.ElementFilter
         public AIResult<List<object>> Result { get; private set; }
 
         /// <summary>
+        /// 缺失的元素ID列表（用于elementIds查询时）
+        /// </summary>
+        private static List<int> MissingElementIds { get; set; }
+
+        /// <summary>
         /// 设置创建的参数
         /// </summary>
         public void SetParameters(FilterSetting data)
@@ -64,13 +69,29 @@ namespace RevitMCPCommandSet.Features.ElementFilter
                     }
                 }
 
-                // 获取指定Id元素的信息
-                elementInfoList = GetElementFullInfo(doc, elementList);
+                // 根据ReturnLevel构建元素信息
+                foreach (var element in elementList)
+                {
+                    var elementInfo = BuildElementInfo(doc, element, FilterSetting);
+                    if (elementInfo != null)
+                    {
+                        elementInfoList.Add(elementInfo);
+                    }
+                }
+
+                // 构建结果消息
+                string resultMessage = $"成功获取{elementInfoList.Count}个元素信息，具体信息储存在Response属性中" + message;
+
+                // 添加缺失元素的信息
+                if (MissingElementIds != null && MissingElementIds.Count > 0)
+                {
+                    resultMessage += $"。注意：有{MissingElementIds.Count}个元素不存在 (ID: {string.Join(", ", MissingElementIds)})";
+                }
 
                 Result = new AIResult<List<object>>
                 {
                     Success = true,
-                    Message = $"成功获取{elementInfoList.Count}个元素信息，具体信息储存在Response属性中" + message,
+                    Message = resultMessage,
                     Response = elementInfoList,
                 };
             }
@@ -128,6 +149,65 @@ namespace RevitMCPCommandSet.Features.ElementFilter
             // 记录过滤条件应用情况
             List<string> appliedFilters = new List<string>();
             List<Element> result = new List<Element>();
+
+            // === 新增：elementIds 直接查询分支 ===
+            if (settings.ElementIds != null && settings.ElementIds.Count > 0)
+            {
+                System.Diagnostics.Trace.WriteLine($"使用elementIds直接查询模式，共{settings.ElementIds.Count}个ID");
+
+                // 先获取ID对应的元素
+                List<Element> idBasedElements = new List<Element>();
+                List<int> missingIds = new List<int>();
+
+                foreach (int id in settings.ElementIds)
+                {
+                    ElementId elementId = new ElementId(id);
+                    Element element = doc.GetElement(elementId);
+                    if (element != null)
+                    {
+                        idBasedElements.Add(element);
+                    }
+                    else
+                    {
+                        missingIds.Add(id);
+                    }
+                }
+
+                // 记录缺失的元素
+                if (missingIds.Count > 0)
+                {
+                    System.Diagnostics.Trace.WriteLine($"警告：{missingIds.Count}个元素不存在 (ID: {string.Join(", ", missingIds)})");
+                    // 将缺失信息添加到结果消息中
+                    MissingElementIds = missingIds;
+                }
+
+                // 检查是否有其他过滤条件
+                bool hasOtherFilters = !string.IsNullOrWhiteSpace(settings.FilterCategory) ||
+                                      !string.IsNullOrWhiteSpace(settings.FilterElementType) ||
+                                      settings.FilterFamilySymbolId > 0 ||
+                                      settings.FilterVisibleInCurrentView ||
+                                      (settings.BoundingBoxMin != null && settings.BoundingBoxMax != null);
+
+                if (hasOtherFilters)
+                {
+                    // 场景2：elementIds + 其他条件，应用额外过滤
+                    System.Diagnostics.Trace.WriteLine("elementIds与其他过滤条件组合使用");
+
+                    // 应用其他过滤条件到ID查询结果
+                    result = ApplyAdditionalFilters(idBasedElements, settings, doc);
+                    System.Diagnostics.Trace.WriteLine($"应用其他过滤后，剩余{result.Count}个元素");
+                }
+                else
+                {
+                    // 场景1：仅使用elementIds查询
+                    result = idBasedElements;
+                    System.Diagnostics.Trace.WriteLine($"仅elementIds查询，返回{result.Count}个元素");
+                }
+
+                return result;
+            }
+
+            // === 原有逻辑：传统过滤流程 ===
             // 如果同时包含类型和实例，需要分别过滤再合并结果
             if (settings.IncludeTypes && settings.IncludeInstances)
             {
@@ -290,6 +370,619 @@ namespace RevitMCPCommandSet.Features.ElementFilter
             }
 
             return collector.ToElements().ToList();
+        }
+
+        /// <summary>
+        /// 对已有元素列表应用额外的过滤条件
+        /// 用于 elementIds + 其他过滤条件的组合场景
+        /// </summary>
+        private static List<Element> ApplyAdditionalFilters(List<Element> elements, FilterSetting settings, Document doc)
+        {
+            List<Element> filteredElements = new List<Element>(elements);
+
+            // 1. 类别过滤
+            if (!string.IsNullOrWhiteSpace(settings.FilterCategory))
+            {
+                BuiltInCategory category;
+                if (Enum.TryParse(settings.FilterCategory, true, out category))
+                {
+                    filteredElements = filteredElements.Where(e => e.Category != null &&
+                                                              (BuiltInCategory)e.Category.Id.IntegerValue == category).ToList();
+                }
+            }
+
+            // 2. 元素类型过滤
+            if (!string.IsNullOrWhiteSpace(settings.FilterElementType))
+            {
+                Type elementType = null;
+                string[] possibleTypeNames = new string[]
+                {
+                    settings.FilterElementType,
+                    $"Autodesk.Revit.DB.{settings.FilterElementType}, RevitAPI",
+                    $"{settings.FilterElementType}, RevitAPI"
+                };
+
+                foreach (string typeName in possibleTypeNames)
+                {
+                    elementType = Type.GetType(typeName);
+                    if (elementType != null)
+                        break;
+                }
+
+                if (elementType != null)
+                {
+                    filteredElements = filteredElements.Where(e => elementType.IsAssignableFrom(e.GetType())).ToList();
+                }
+            }
+
+            // 3. 族符号过滤
+            if (settings.FilterFamilySymbolId > 0)
+            {
+                ElementId symbolId = new ElementId(settings.FilterFamilySymbolId);
+                filteredElements = filteredElements.Where(e =>
+                {
+                    if (e is FamilyInstance fi)
+                    {
+                        return fi.Symbol?.Id == symbolId;
+                    }
+                    return false;
+                }).ToList();
+            }
+
+            // 4. 视图可见性过滤
+            if (settings.FilterVisibleInCurrentView && doc.ActiveView != null)
+            {
+                FilteredElementCollector viewCollector = new FilteredElementCollector(doc, doc.ActiveView.Id);
+                HashSet<ElementId> visibleIds = new HashSet<ElementId>(viewCollector.ToElementIds());
+                filteredElements = filteredElements.Where(e => visibleIds.Contains(e.Id)).ToList();
+            }
+
+            // 5. 空间范围过滤
+            if (settings.BoundingBoxMin != null && settings.BoundingBoxMax != null)
+            {
+                XYZ minXYZ = JZPoint.ToXYZ(settings.BoundingBoxMin);
+                XYZ maxXYZ = JZPoint.ToXYZ(settings.BoundingBoxMax);
+                Outline outline = new Outline(minXYZ, maxXYZ);
+
+                filteredElements = filteredElements.Where(e =>
+                {
+                    BoundingBoxXYZ bbox = e.get_BoundingBox(doc.ActiveView);
+                    if (bbox == null)
+                        return false;
+
+                    // 检查边界框是否与过滤范围相交
+                    Outline elementOutline = new Outline(bbox.Min, bbox.Max);
+                    return outline.Intersects(elementOutline, 0);
+                }).ToList();
+            }
+
+            // 6. 元素类型/实例过滤
+            if (settings.IncludeTypes && !settings.IncludeInstances)
+            {
+                filteredElements = filteredElements.Where(e => e is ElementType).ToList();
+            }
+            else if (!settings.IncludeTypes && settings.IncludeInstances)
+            {
+                filteredElements = filteredElements.Where(e => !(e is ElementType)).ToList();
+            }
+
+            return filteredElements;
+        }
+
+        /// <summary>
+        /// 根据ReturnLevel构建元素信息 - 主分发器
+        /// </summary>
+        public static object BuildElementInfo(Document doc, Element element, FilterSetting settings)
+        {
+            if (element == null) return null;
+
+            // 根据 returnLevel 路由到对应的构建方法
+            switch (settings.ReturnLevel?.ToLower())
+            {
+                case "minimal":
+                    return BuildMinimalInfo(element);
+
+                case "basic":
+                    return BuildBasicInfo(doc, element);
+
+                case "geometry":
+                    return BuildGeometryInfo(doc, element, settings);
+
+                case "parameters":
+                    return BuildParametersInfo(doc, element, settings);
+
+                case "full":
+                    return BuildFullInfo(doc, element, settings);
+
+                case "custom":
+                    return BuildCustomInfo(doc, element, settings);
+
+                default:
+                    // 默认返回最小信息
+                    return BuildMinimalInfo(element);
+            }
+        }
+
+        /// <summary>
+        /// 构建最小信息 - 仅包含ID
+        /// </summary>
+        private static object BuildMinimalInfo(Element element)
+        {
+            return new
+            {
+                elementId = element.Id.IntegerValue,
+                uniqueId = element.UniqueId
+            };
+        }
+
+        /// <summary>
+        /// 构建基础信息 - ID + 基本属性
+        /// </summary>
+        private static object BuildBasicInfo(Document doc, Element element)
+        {
+            var minimal = BuildMinimalInfo(element);
+
+            // 获取基本信息
+            string name = element.Name;
+            string categoryName = element.Category?.Name ?? "未知类别";
+            BuiltInCategory? builtInCategory = element.Category != null
+                ? (BuiltInCategory?)element.Category.Id.IntegerValue
+                : null;
+
+            // 获取类型信息
+            ElementId typeId = element.GetTypeId();
+            string typeName = null;
+            if (typeId != ElementId.InvalidElementId)
+            {
+                Element typeElement = doc.GetElement(typeId);
+                typeName = typeElement?.Name;
+            }
+
+            // 获取族信息（如果是族实例）
+            string familyName = null;
+            ElementId familyId = ElementId.InvalidElementId;
+            if (element is FamilyInstance fi)
+            {
+                familyName = fi.Symbol?.Family?.Name;
+                familyId = fi.Symbol?.Family?.Id ?? ElementId.InvalidElementId;
+            }
+
+            // 获取标高信息
+            var levelInfo = GetElementLevel(doc, element);
+
+            return new
+            {
+                elementId = element.Id.IntegerValue,
+                uniqueId = element.UniqueId,
+                name = name,
+                category = categoryName,
+                builtInCategory = builtInCategory?.ToString(),
+                typeId = typeId.IntegerValue,
+                typeName = typeName,
+                familyId = familyId.IntegerValue,
+                familyName = familyName,
+                levelId = levelInfo?.Id ?? -1,
+                levelName = levelInfo?.Name,
+                documentGuid = element.Document.GetHashCode().ToString()
+            };
+        }
+
+        /// <summary>
+        /// 构建几何信息 - Basic + 几何属性
+        /// </summary>
+        private static object BuildGeometryInfo(Document doc, Element element, FilterSetting settings)
+        {
+            var basicInfo = BuildBasicInfo(doc, element);
+            var geometryData = new Dictionary<string, object>();
+
+            // 获取包围盒信息
+            var boundingBox = GetBoundingBoxInfo(element);
+            if (boundingBox != null)
+            {
+                geometryData["boundingBox"] = boundingBox;
+            }
+
+            // 获取变换矩阵（如果有）
+            if (element is FamilyInstance familyInstance)
+            {
+                Transform transform = familyInstance.GetTransform();
+                geometryData["transform"] = new
+                {
+                    origin = new { x = transform.Origin.X * 304.8, y = transform.Origin.Y * 304.8, z = transform.Origin.Z * 304.8 },
+                    basisX = new { x = transform.BasisX.X, y = transform.BasisX.Y, z = transform.BasisX.Z },
+                    basisY = new { x = transform.BasisY.X, y = transform.BasisY.Y, z = transform.BasisY.Z },
+                    basisZ = new { x = transform.BasisZ.X, y = transform.BasisZ.Y, z = transform.BasisZ.Z }
+                };
+
+                // 获取位置点
+                if (familyInstance.Location is LocationPoint locPoint)
+                {
+                    geometryData["locationPoint"] = new
+                    {
+                        x = locPoint.Point.X * 304.8,
+                        y = locPoint.Point.Y * 304.8,
+                        z = locPoint.Point.Z * 304.8
+                    };
+                    geometryData["rotation"] = locPoint.Rotation * 180 / Math.PI;
+                }
+
+                // 根据GeometryOptions决定是否包含高开销项
+                if (settings.GeometryOptions != null)
+                {
+                    if (settings.GeometryOptions.IncludeHandOrientation)
+                    {
+                        XYZ hand = familyInstance.HandOrientation;
+                        geometryData["handOrientation"] = new { x = hand.X, y = hand.Y, z = hand.Z };
+                    }
+                    if (settings.GeometryOptions.IncludeFacingOrientation)
+                    {
+                        XYZ facing = familyInstance.FacingOrientation;
+                        geometryData["facingOrientation"] = new { x = facing.X, y = facing.Y, z = facing.Z };
+                    }
+                    if (settings.GeometryOptions.IncludeIsHandFlipped)
+                    {
+                        geometryData["isHandFlipped"] = familyInstance.HandFlipped;
+                    }
+                    if (settings.GeometryOptions.IncludeIsFacingFlipped)
+                    {
+                        geometryData["isFacingFlipped"] = familyInstance.FacingFlipped;
+                    }
+                }
+            }
+
+            // 对于线性元素，获取线信息
+            if (element.Location is LocationCurve locCurve)
+            {
+                Curve curve = locCurve.Curve;
+                geometryData["locationCurve"] = new
+                {
+                    startPoint = new { x = curve.GetEndPoint(0).X * 304.8, y = curve.GetEndPoint(0).Y * 304.8, z = curve.GetEndPoint(0).Z * 304.8 },
+                    endPoint = new { x = curve.GetEndPoint(1).X * 304.8, y = curve.GetEndPoint(1).Y * 304.8, z = curve.GetEndPoint(1).Z * 304.8 },
+                    length = curve.Length * 304.8
+                };
+
+                // 获取曲线方向
+                XYZ direction = (curve.GetEndPoint(1) - curve.GetEndPoint(0)).Normalize();
+                geometryData["curveDirection"] = new { x = direction.X, y = direction.Y, z = direction.Z };
+            }
+
+            // 合并基础信息和几何信息
+            var result = new Dictionary<string, object>();
+            foreach (var prop in basicInfo.GetType().GetProperties())
+            {
+                result[prop.Name] = prop.GetValue(basicInfo);
+            }
+            foreach (var kvp in geometryData)
+            {
+                result[kvp.Key] = kvp.Value;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 构建参数信息 - Basic + 参数
+        /// </summary>
+        private static object BuildParametersInfo(Document doc, Element element, FilterSetting settings)
+        {
+            var basicInfo = BuildBasicInfo(doc, element);
+
+            // 提取参数
+            var parameters = ExtractParameters(element, settings.ParameterOptions);
+
+            // 合并基础信息和参数信息
+            var result = new Dictionary<string, object>();
+            foreach (var prop in basicInfo.GetType().GetProperties())
+            {
+                result[prop.Name] = prop.GetValue(basicInfo);
+            }
+
+            // 根据返回格式决定如何添加参数
+            if (settings.ParameterOptions?.ReturnFormat == "Separated")
+            {
+                result["instanceParameters"] = parameters["instanceParameters"];
+                result["typeParameters"] = parameters["typeParameters"];
+            }
+            else
+            {
+                // Merged格式
+                result["parameters"] = parameters["parameters"];
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 判断是否为定位元素（标高、轴网等）
+        /// </summary>
+        private static bool IsPositioningElement(Element element)
+        {
+            return element is Level || element is Grid;
+        }
+
+        /// <summary>
+        /// 判断是否为空间元素（房间、区域等）
+        /// </summary>
+        private static bool IsSpatialElement(Element element)
+        {
+#if REVIT2020 || REVIT2021 || REVIT2022 || REVIT2023 || REVIT2024
+            return element is Room || element is Area || element is Autodesk.Revit.DB.Mechanical.Space;
+#else
+            return element is Autodesk.Revit.DB.Architecture.Room ||
+                   element is Autodesk.Revit.DB.Area ||
+                   element is Autodesk.Revit.DB.Mechanical.Space;
+#endif
+        }
+
+        /// <summary>
+        /// 判断是否为注释元素
+        /// </summary>
+        private static bool IsAnnotationElement(Element element)
+        {
+            return element is TextNote ||
+                   element is Dimension ||
+                   element is DetailLine ||
+                   element is DetailCurve ||
+                   element is IndependentTag ||
+                   element is FillPatternElement;
+        }
+
+        /// <summary>
+        /// 判断是否为组或链接元素
+        /// </summary>
+        private static bool IsGroupOrLinkElement(Element element)
+        {
+            return element is Group ||
+                   element is GroupType ||
+                   element is RevitLinkInstance ||
+                   element is RevitLinkType;
+        }
+
+        /// <summary>
+        /// 构建完整信息 - 包含所有信息
+        /// </summary>
+        private static object BuildFullInfo(Document doc, Element element, FilterSetting settings)
+        {
+            // 使用原有的 CreateElementFullInfo 方法的逻辑
+            // 但根据新的设置进行调整
+            if (element?.Category?.HasMaterialQuantities ?? false)
+            {
+                return CreateElementFullInfo(doc, element);
+            }
+            else if (element is ElementType elementType)
+            {
+                return CreateTypeFullInfo(doc, elementType);
+            }
+            else if (IsPositioningElement(element))
+            {
+                return CreatePositioningElementInfo(doc, element);
+            }
+            else if (IsSpatialElement(element))
+            {
+                return CreateSpatialElementInfo(doc, element);
+            }
+            else if (element is View view)
+            {
+                return CreateViewInfo(doc, view);
+            }
+            else if (IsAnnotationElement(element))
+            {
+                return CreateAnnotationInfo(doc, element);
+            }
+            else if (IsGroupOrLinkElement(element))
+            {
+                return CreateGroupOrLinkInfo(doc, element);
+            }
+            else
+            {
+                // 对于未识别的元素类型，返回基础信息
+                return BuildBasicInfo(doc, element);
+            }
+        }
+
+        /// <summary>
+        /// 构建自定义字段信息
+        /// </summary>
+        private static object BuildCustomInfo(Document doc, Element element, FilterSetting settings)
+        {
+            if (settings.IncludeFields == null || settings.IncludeFields.Count == 0)
+            {
+                // 如果没有指定字段，返回最小信息
+                return BuildMinimalInfo(element);
+            }
+
+            var result = new Dictionary<string, object>();
+
+            // 根据字段列表选择性构建信息
+            foreach (string field in settings.IncludeFields)
+            {
+                switch (field.ToLower())
+                {
+                    case "elementid":
+                        result["elementId"] = element.Id.IntegerValue;
+                        break;
+                    case "uniqueid":
+                        result["uniqueId"] = element.UniqueId;
+                        break;
+                    case "name":
+                        result["name"] = element.Name;
+                        break;
+                    case "category":
+                        result["category"] = element.Category?.Name;
+                        break;
+                    case "level":
+                    case "level.name":
+                        var levelInfo = GetElementLevel(doc, element);
+                        result["levelName"] = levelInfo?.Name;
+                        break;
+                    case "geometry.locationpoint":
+                        if (element is FamilyInstance fi && fi.Location is LocationPoint lp)
+                        {
+                            result["locationPoint"] = new
+                            {
+                                x = lp.Point.X * 304.8,
+                                y = lp.Point.Y * 304.8,
+                                z = lp.Point.Z * 304.8
+                            };
+                        }
+                        break;
+                    // 可以继续添加更多字段处理
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 提取元素参数
+        /// </summary>
+        private static Dictionary<string, object> ExtractParameters(Element element, ParameterOptions options)
+        {
+            var result = new Dictionary<string, object>();
+
+            if (options == null)
+            {
+                options = new ParameterOptions(); // 使用默认设置
+            }
+
+            var instanceParams = new List<object>();
+            var typeParams = new List<object>();
+            var mergedParams = new Dictionary<string, string>();
+
+            // 提取实例参数
+            if (options.Scope == "Instance" || options.Scope == "Both")
+            {
+                foreach (Parameter param in element.Parameters)
+                {
+                    if (param == null || !param.HasValue) continue;
+
+                    string paramName = param.Definition.Name;
+
+                    // 检查是否应包含此参数
+                    if (!ShouldIncludeParameter(paramName, param.Definition as InternalDefinition, options))
+                        continue;
+
+                    string displayValue = param.AsValueString() ?? param.AsString();
+
+                    if (options.ReturnFormat == "Separated")
+                    {
+                        instanceParams.Add(new
+                        {
+                            name = paramName,
+                            displayValue = displayValue,
+                            rawValue = GetParameterRawValue(param),
+                            storageType = param.StorageType.ToString(),
+                            source = "Instance"
+                        });
+                    }
+                    else
+                    {
+                        mergedParams[paramName] = displayValue;
+                    }
+                }
+            }
+
+            // 提取类型参数
+            if ((options.Scope == "Type" || options.Scope == "Both") && element.GetTypeId() != ElementId.InvalidElementId)
+            {
+                Element typeElement = element.Document.GetElement(element.GetTypeId());
+                if (typeElement != null)
+                {
+                    foreach (Parameter param in typeElement.Parameters)
+                    {
+                        if (param == null || !param.HasValue) continue;
+
+                        string paramName = param.Definition.Name;
+
+                        // 检查是否应包含此参数
+                        if (!ShouldIncludeParameter(paramName, param.Definition as InternalDefinition, options))
+                            continue;
+
+                        string displayValue = param.AsValueString() ?? param.AsString();
+
+                        if (options.ReturnFormat == "Separated")
+                        {
+                            typeParams.Add(new
+                            {
+                                name = paramName,
+                                displayValue = displayValue,
+                                rawValue = GetParameterRawValue(param),
+                                storageType = param.StorageType.ToString(),
+                                source = "Type"
+                            });
+                        }
+                        else
+                        {
+                            // 在合并格式中，类型参数加 "Type." 前缀
+                            mergedParams[$"Type.{paramName}"] = displayValue;
+                        }
+                    }
+                }
+            }
+
+            // 根据返回格式组装结果
+            if (options.ReturnFormat == "Separated")
+            {
+                result["instanceParameters"] = instanceParams;
+                result["typeParameters"] = typeParams;
+            }
+            else
+            {
+                result["parameters"] = mergedParams;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 判断是否应包含参数
+        /// </summary>
+        private static bool ShouldIncludeParameter(string paramName, InternalDefinition internalDef, ParameterOptions options)
+        {
+            if (options.FilterMode == "None")
+                return true;
+
+            bool isInList = false;
+
+            // 检查参数名列表
+            if (options.ParameterNames != null && options.ParameterNames.Contains(paramName))
+                isInList = true;
+
+            // 检查内置参数列表
+            if (internalDef != null && options.BuiltInParameters != null)
+            {
+                string builtInName = internalDef.BuiltInParameter.ToString();
+                if (options.BuiltInParameters.Contains(builtInName))
+                    isInList = true;
+            }
+
+            // 根据过滤模式返回
+            if (options.FilterMode == "Include")
+                return isInList;
+            else if (options.FilterMode == "Exclude")
+                return !isInList;
+
+            return true;
+        }
+
+        /// <summary>
+        /// 获取参数原始值
+        /// </summary>
+        private static object GetParameterRawValue(Parameter param)
+        {
+            switch (param.StorageType)
+            {
+                case StorageType.Double:
+                    return param.AsDouble() * 304.8; // 转换为毫米
+                case StorageType.Integer:
+                    return param.AsInteger();
+                case StorageType.String:
+                    return param.AsString();
+                case StorageType.ElementId:
+                    return param.AsElementId()?.IntegerValue ?? -1;
+                default:
+                    return null;
+            }
         }
 
         /// <summary>
