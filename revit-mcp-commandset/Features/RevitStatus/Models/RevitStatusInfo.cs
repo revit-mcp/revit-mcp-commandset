@@ -26,6 +26,11 @@ namespace RevitMCPCommandSet.Features.RevitStatus.Models
         /// 所有打开的文档名称列表
         /// </summary>
         public List<string> OpenDocumentNames { get; set; }
+
+        /// <summary>
+        /// 应用程序语言设置
+        /// </summary>
+        public string ApplicationLanguage { get; set; }
     }
 
     /// <summary>

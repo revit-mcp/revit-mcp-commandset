@@ -41,6 +41,9 @@ namespace RevitMCPCommandSet.Features.RevitStatus
                 // 获取Revit版本信息
                 statusInfo.RevitVersion = app.VersionName;
 
+                // 获取应用程序语言设置
+                statusInfo.ApplicationLanguage = app.Language.ToString();
+
                 // 检查是否有活动文档
                 statusInfo.HasActiveDocument = uiDoc != null;
 
@@ -73,6 +76,7 @@ namespace RevitMCPCommandSet.Features.RevitStatus
                 {
                     Success = true,
                     Message = $"成功获取Revit状态信息。Revit版本: {statusInfo.RevitVersion}, " +
+                             $"语言: {statusInfo.ApplicationLanguage}, " +
                              $"活动文档: {(statusInfo.HasActiveDocument ? statusInfo.ActiveDocument.ProjectName : "无")}, " +
                              $"打开文档数量: {statusInfo.OpenDocumentNames.Count}",
                     Response = statusInfo

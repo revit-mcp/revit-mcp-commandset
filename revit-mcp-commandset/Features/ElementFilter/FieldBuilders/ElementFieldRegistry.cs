@@ -1,0 +1,283 @@
+using Autodesk.Revit.DB;
+using RevitMCPCommandSet.Features.ElementFilter.FieldBuilders.Core;
+using RevitMCPCommandSet.Features.ElementFilter.FieldBuilders.Geometry;
+using RevitMCPCommandSet.Features.ElementFilter.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace RevitMCPCommandSet.Features.ElementFilter.FieldBuilders
+{
+    /// <summary>
+    /// 字段注册表
+    /// 管理所有字段构建器和预设组合
+    /// </summary>
+    public static class ElementFieldRegistry
+    {
+        private static readonly Dictionary<string, IFieldBuilder> _fieldBuilders;
+        private static readonly Dictionary<string, List<string>> _fieldPresets;
+
+        static ElementFieldRegistry()
+        {
+            // 注册字段构建器
+            _fieldBuilders = new Dictionary<string, IFieldBuilder>(StringComparer.OrdinalIgnoreCase);
+            RegisterFieldBuilders();
+
+            // 注册预设组合
+            _fieldPresets = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            RegisterFieldPresets();
+        }
+
+        /// <summary>
+        /// 注册所有字段构建器
+        /// </summary>
+        private static void RegisterFieldBuilders()
+        {
+            // Core 字段构建器
+            RegisterBuilder(new TypeInfoFieldBuilder());
+            RegisterBuilder(new FamilyInfoFieldBuilder());
+            RegisterBuilder(new LevelInfoFieldBuilder());
+
+            // Geometry 字段构建器
+            RegisterBuilder(new BoundingBoxFieldBuilder());
+            RegisterBuilder(new LocationPointFieldBuilder());
+            RegisterBuilder(new LocationCurveFieldBuilder());
+            RegisterBuilder(new ThicknessFieldBuilder());
+            RegisterBuilder(new HeightFieldBuilder());
+            RegisterBuilder(new WidthFieldBuilder());
+            RegisterBuilder(new AreaFieldBuilder());
+        }
+
+        /// <summary>
+        /// 注册预设组合
+        /// </summary>
+        private static void RegisterFieldPresets()
+        {
+            // 基础预设
+            _fieldPresets["core.identityLite"] = new List<string> { "name", "category", "builtInCategory" };
+            _fieldPresets["listDisplay"] = new List<string> { "name", "category", "builtInCategory" };
+            _fieldPresets["typeAnalysis"] = new List<string> { "name", "category", "builtInCategory", "core.typeInfo" };
+            _fieldPresets["spatialAnalysis"] = new List<string> { "name", "category", "builtInCategory", "geometry.boundingBox" };
+            _fieldPresets["detailView"] = new List<string> { "name", "category", "builtInCategory", "core.typeInfo", "core.levelInfo" };
+            _fieldPresets["familyAnalysis"] = new List<string> { "name", "category", "builtInCategory", "core.typeInfo", "core.familyInfo" };
+        }
+
+        /// <summary>
+        /// 注册单个字段构建器
+        /// </summary>
+        /// <param name="builder">字段构建器</param>
+        private static void RegisterBuilder(IFieldBuilder builder)
+        {
+            if (builder == null)
+                throw new ArgumentNullException(nameof(builder));
+
+            _fieldBuilders[builder.FieldName] = builder;
+        }
+
+        /// <summary>
+        /// 构建元素信息（主入口）
+        /// </summary>
+        /// <param name="doc">Revit 文档</param>
+        /// <param name="element">元素</param>
+        /// <param name="settings">过滤器设置</param>
+        /// <returns>包含字段数据的字典</returns>
+        public static Dictionary<string, object> BuildElementInfo(Document doc, Element element, FilterSetting settings)
+        {
+            var result = BuildElementInfoWithWarnings(doc, element, settings, out var warnings);
+            return result;
+        }
+
+        /// <summary>
+        /// 构建元素信息并返回警告信息
+        /// </summary>
+        /// <param name="doc">Revit 文档</param>
+        /// <param name="element">元素</param>
+        /// <param name="settings">过滤器设置</param>
+        /// <param name="warnings">输出的警告信息列表</param>
+        /// <returns>包含字段数据的字典</returns>
+        public static Dictionary<string, object> BuildElementInfoWithWarnings(Document doc, Element element, FilterSetting settings, out List<string> warnings)
+        {
+            if (doc == null) throw new ArgumentNullException(nameof(doc));
+            if (element == null) throw new ArgumentNullException(nameof(element));
+
+            var result = new Dictionary<string, object>();
+            var context = new FieldContext(doc, element, result, settings);
+
+            // 始终包含 elementId
+            result["elementId"] = element.Id.IntegerValue;
+
+            // 解析字段请求
+            var requestedFields = ResolveFields(settings?.Fields, settings?.FieldPresets);
+
+            // 构建字段
+            foreach (var field in requestedFields)
+            {
+                BuildField(field, context);
+            }
+
+            // 处理参数（如果指定）
+            if (settings?.Parameters != null)
+            {
+                BuildParameters(context);
+            }
+
+            // 返回警告信息
+            warnings = context.Warnings;
+
+            return result;
+        }
+
+        /// <summary>
+        /// 解析字段请求（合并 fields 和 fieldPresets）
+        /// </summary>
+        /// <param name="fields">原子字段列表</param>
+        /// <param name="fieldPresets">预设组合列表</param>
+        /// <returns>去重后的字段列表</returns>
+        private static HashSet<string> ResolveFields(List<string> fields, List<string> fieldPresets)
+        {
+            var resolvedFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            // 添加直接指定的字段
+            if (fields != null)
+            {
+                foreach (var field in fields)
+                {
+                    resolvedFields.Add(field);
+                }
+            }
+
+            // 展开预设组合
+            if (fieldPresets != null)
+            {
+                foreach (var preset in fieldPresets)
+                {
+                    if (_fieldPresets.TryGetValue(preset, out var presetFields))
+                    {
+                        foreach (var field in presetFields)
+                        {
+                            resolvedFields.Add(field);
+                        }
+                    }
+                    else
+                    {
+                        // 检查是否为合法字段（容错处理）
+                        if (IsFieldRegistered(preset))
+                        {
+                            resolvedFields.Add(preset);
+                            // 可以选择性地记录一个提示，但不作为错误处理
+                        }
+                        // 如果既不是预设也不是字段，则静默忽略（避免过多噪音）
+                    }
+                }
+            }
+
+            return resolvedFields;
+        }
+
+        /// <summary>
+        /// 构建单个字段
+        /// </summary>
+        /// <param name="field">字段名</param>
+        /// <param name="context">字段上下文</param>
+        private static void BuildField(string field, FieldContext context)
+        {
+            try
+            {
+                // 简单字段直接处理（性能优化）
+                switch (field?.ToLower())
+                {
+                    case "name":
+                        context.Result["name"] = context.Element.Name;
+                        break;
+                    case "category":
+                        context.Result["category"] = context.Element.Category?.Name ?? "Unknown";
+                        break;
+                    case "builtincategory":
+                        context.Result["builtInCategory"] = context.Element.Category != null
+                            ? ((BuiltInCategory)context.Element.Category.Id.IntegerValue).ToString()
+                            : null;
+                        break;
+                    default:
+                        // 复杂字段使用 Builder
+                        if (_fieldBuilders.TryGetValue(field, out var builder))
+                        {
+                            if (builder.CanBuild(context.Element))
+                            {
+                                builder.Build(context);
+                            }
+                        }
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                // 静默失败 - 记录日志但不影响其他字段
+                System.Diagnostics.Trace.WriteLine($"字段构建失败 [{field}]: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 构建参数信息
+        /// </summary>
+        /// <param name="context">字段上下文</param>
+        private static void BuildParameters(FieldContext context)
+        {
+            try
+            {
+                var parameterProcessor = new ParameterProcessor();
+                parameterProcessor.ProcessParameters(context, context.Settings?.Parameters);
+            }
+            catch (Exception ex)
+            {
+                // 静默失败
+                System.Diagnostics.Trace.WriteLine($"参数构建失败: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 获取所有注册的字段名称
+        /// </summary>
+        /// <returns>字段名称列表</returns>
+        public static IEnumerable<string> GetRegisteredFields()
+        {
+            var simpleFields = new[] { "name", "category", "builtInCategory" };
+            var builderFields = _fieldBuilders.Keys;
+            return simpleFields.Concat(builderFields);
+        }
+
+        /// <summary>
+        /// 获取所有注册的预设名称
+        /// </summary>
+        /// <returns>预设名称列表</returns>
+        public static IEnumerable<string> GetRegisteredPresets()
+        {
+            return _fieldPresets.Keys;
+        }
+
+        /// <summary>
+        /// 检查字段是否已注册
+        /// </summary>
+        /// <param name="fieldName">字段名</param>
+        /// <returns>如果已注册返回 true</returns>
+        public static bool IsFieldRegistered(string fieldName)
+        {
+            if (string.IsNullOrEmpty(fieldName)) return false;
+
+            var lowerField = fieldName.ToLower();
+            return lowerField == "name" ||
+                   lowerField == "category" ||
+                   lowerField == "builtincategory" ||
+                   _fieldBuilders.ContainsKey(fieldName);
+        }
+
+        /// <summary>
+        /// 检查预设是否已注册
+        /// </summary>
+        /// <param name="presetName">预设名</param>
+        /// <returns>如果已注册返回 true</returns>
+        public static bool IsPresetRegistered(string presetName)
+        {
+            return !string.IsNullOrEmpty(presetName) && _fieldPresets.ContainsKey(presetName);
+        }
+    }
+}

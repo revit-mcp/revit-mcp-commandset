@@ -3,6 +3,7 @@ using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPCommandSet.Features.ElementFilter.Models;
+using RevitMCPCommandSet.Features.ElementFilter.FieldBuilders;
 using RevitMCPCommandSet.Models.Geometry;
 using RevitMCPSDK.API.Interfaces;
 
@@ -71,17 +72,34 @@ namespace RevitMCPCommandSet.Features.ElementFilter
                 }
 
                 // 根据ReturnLevel构建元素信息
+                var allWarnings = new List<string>();
                 foreach (var element in elementList)
                 {
-                    var elementInfo = BuildElementInfo(doc, element, FilterSetting);
+                    var elementInfo = ElementFieldRegistry.BuildElementInfoWithWarnings(doc, element, FilterSetting, out var warnings);
                     if (elementInfo != null)
                     {
                         elementInfoList.Add(elementInfo);
+                    }
+
+                    // 收集警告信息
+                    if (warnings != null && warnings.Count > 0)
+                    {
+                        allWarnings.AddRange(warnings);
                     }
                 }
 
                 // 构建结果消息
                 string resultMessage = $"成功获取{elementInfoList.Count}个元素信息，具体信息储存在Response属性中" + message;
+
+                // 添加警告信息
+                if (allWarnings.Count > 0)
+                {
+                    var uniqueWarnings = allWarnings.Distinct().ToList();
+                    if (uniqueWarnings.Count > 0)
+                    {
+                        resultMessage += $"。警告: {string.Join("; ", uniqueWarnings)}";
+                    }
+                }
 
                 // 添加缺失元素的信息
                 if (MissingElementIds != null && MissingElementIds.Count > 0)
@@ -471,37 +489,22 @@ namespace RevitMCPCommandSet.Features.ElementFilter
         }
 
         /// <summary>
-        /// 根据ReturnLevel构建元素信息 - 主分发器
+        /// 根据字段请求构建元素信息 - 使用新的字段注册表
         /// </summary>
         public static object BuildElementInfo(Document doc, Element element, FilterSetting settings)
         {
             if (element == null) return null;
 
-            // 根据 returnLevel 路由到对应的构建方法
-            switch (settings.ReturnLevel?.ToLower())
+            // 应用向后兼容层：将旧格式映射为新格式
+            if (settings != null)
             {
-                case "minimal":
-                    return BuildMinimalInfo(element);
-
-                case "basic":
-                    return BuildBasicInfo(doc, element);
-
-                case "geometry":
-                    return BuildGeometryInfo(doc, element, settings);
-
-                case "parameters":
-                    return BuildParametersInfo(doc, element, settings);
-
-                case "full":
-                    return BuildFullInfo(doc, element, settings);
-
-                case "custom":
-                    return BuildCustomInfo(doc, element, settings);
-
-                default:
-                    // 默认返回最小信息
-                    return BuildMinimalInfo(element);
+                settings.NormalizeSettings();
             }
+
+            // 使用新的 ElementFieldRegistry 构建字段信息
+            var elementInfo = ElementFieldRegistry.BuildElementInfo(doc, element, settings);
+
+            return elementInfo;
         }
 
         /// <summary>
