@@ -1,0 +1,1893 @@
+ ✻ Welcome to Claude Code!
+
+   /help for help, /status for your current setup
+
+   cwd: 
+   E:\工作文档\开发类\MyCode\Revit-MCP\revit-mcp-commandset
+
+   ─────────────────────────────────────────────────────────
+
+   Overrides (via env):
+
+   • API Base URL: https://crs.youngala.com/api
+
+> 快速存个档
+
+● 我来执行快速存档操作。
+
+● Bash(git add .)
+  ⎿ Running in the background (down arrow to      
+
+● Bash(git commit -m "自动存档_$(powershell -Command
+      "Get-Date -Format 'yyyyMMdd_HHmmss'")")
+  ⎿ Running in the background (down arrow to      
+
+● 已执行快速存档操作，正在后台保存当前代码状态。
+
+> 使用mcp工具，测试获取项目中门的定位点、墙的定位线、
+  楼板的轮廓
+
+● 我来使用 MCP 工具测试获取项目中门的定位点、墙的定
+  位线和楼板的轮廓。首先需要了解当前 Revit
+  项目状态，然后分别查询这些元素的几何信息。
+                                                  
+
+● BashOutput(Reading shell output)
+  ⎿ [dev/cli-based 78494e6]                       
+    自动存档_20250926_102310
+     9 files changed, 976 insertions(+), 1 deletio
+    n(-)
+    … +9 lines (ctrl+o to expand)
+
+
+● 存档成功。现在使用 MCP
+  工具测试获取门、墙、楼板的几何信息：
+
+● revit-mcp - ai_element_filter (MCP)(data:
+                                     {"filterCategory":
+                                     "OST_Doors","inclu
+                                     deInstances":true,
+                                     "includeTypes":fal
+                                     se,"fields":["name
+                                     ","geometry.locati
+                                     onPoint"],"maxElem
+                                     ents":5,"returnLev
+                                     el":"Custom"})
+  ⎿ {                                             
+      "Success": true,
+      "Message": "成功获取1个元素信息，具体信息储
+    存在Response属性中",
+    … +10 lines (ctrl+o to expand)
+
+● revit-mcp - ai_element_filter (MCP)(data:
+                                     {"filterCategory":
+                                     "OST_Walls","inclu
+                                     deInstances":true,
+                                     "includeTypes":fal
+                                     se,"fields":["name
+                                     ","geometry.locati
+                                     onCurve"],"maxElem
+                                     ents":5,"returnLev
+                                     el":"Custom"})
+  ⎿ {                                             
+      "Success": true,
+      "Message": "成功获取1个元素信息，具体信息储
+    存在Response属性中",
+    … +13 lines (ctrl+o to expand)
+
+● revit-mcp - ai_element_filter (MCP)(data:
+                                     {"filterCategory":
+                                     "OST_Floors","incl
+                                     udeInstances":true
+                                     ,"includeTypes":fa
+                                     lse,"fields":["nam
+                                     e","geometry.bound
+                                     ingBox"],"maxEleme
+                                     nts":5,"returnLeve
+                                     l":"Custom"})
+  ⎿ {                                             
+      "Success": true,
+      "Message": "成功获取1个元素信息，具体信息储
+    存在Response属性中",
+    … +13 lines (ctrl+o to expand)
+
+● 测试完成！MCP 工具成功获取了各类元素的几何信息：
+
+  测试结果总结
+
+  1. 门元素 - 定位点
+  - 找到门：750 x 2000mm (ID: 333593)
+  - 定位点坐标：x=1337.76mm, y=1745.47mm, z=0mm
+
+  2. 墙元素 - 定位线
+  - 找到墙：常规 - 200mm (ID: 333530)
+  - 定位线：起点(x=-3512.24mm, y=1745.47mm, z=0mm)
+  → 终点(x=6187.76mm, y=1745.47mm, z=0mm)
+
+  3. 楼板元素 - 轮廓（边界框）
+  - 找到楼板：常规 - 150mm (ID: 333557)
+  - 边界框：最小点(-3512.24, 1845.47, -150.00mm) 到
+   最大点(6187.76, 7328.43, 0mm)
+
+  所有测试均成功，MCP 工具字段驱动架构运行正常，能
+  够准确获取不同元素类型的几何定位信息。
+
+> /model 
+  ⎿  Set model to opus (claude-opus-4-1-20250805)
+
+> /model 
+  ⎿  Set model to opusplan (claude-opus-4-1-20250805)
+
+> 我的建议
+  我认为不应该区分“geometry.locationPoint和geometry.l
+  ocationCurve”，定位点还是定位线应该由程序，根据元素
+  的Location属性里是否存有值，值的类型属于定位点还是
+  定位线自行获取。
+  当是楼板、天花板等需要轮廓的构件时，并且用户希望获
+  得楼板轮廓，这时候应该调用 @ProjectUtils.cs 
+  内的GetElementProfile()方法，获取到楼板下表面返回，
+  因为BoundingBoxXYZ不能获得准确的轮廓
+  无论返回的定位线、定位点还是轮廓、最大包围盒，都应
+  该以 Models/Geometry路径下的JZPoint、JZLine、JZFace
+  类型为返回类型，Revit内部数据类型和上述数据类型的转
+  换方法可以参考和更新到 @GeometryUtils 中。
+  类似用户需要一个墙的定位线的时候，我认为AI应该返回
+  两个字段，一个是eLementId，一个是location或者locati
+  onLine，即定位线、定位点、轮廓、最大包围盒都要用一
+  个字段包装一下，而不是像现在一样直接把x、y、z的值暴
+  露在最外层
+
+● 我来分析您的建议并制定优化方案。
+
+● Read(revit-mcp-commandset\Features\ElementFilter\Fiel
+      dBuilders\ElementFieldRegistry.cs)
+  ⎿  Read 60 lines (ctrl+o to expand)
+
+● Read(revit-mcp-commandset\Features\ElementFilter\Fiel
+      dBuilders\ElementFieldRegistry.cs)
+  ⎿  Read 0 lines 
+
+● Read(revit-mcp-commandset\Features\ElementFilter\Fiel
+      dBuilders\ElementFieldRegistry.cs)
+  ⎿  Read 83 lines (ctrl+o to expand)
+
+● Search(pattern: "**/*LocationPointFieldBuilder*.cs")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+● Read(revit-mcp-commandset\Features\ElementFilter\Fiel
+      dBuilders\Geometry\LocationPointFieldBuilder.cs)
+  ⎿  Read 42 lines (ctrl+o to expand)
+
+● Read(revit-mcp-commandset\Features\ElementFilter\Fiel
+      dBuilders\Geometry\LocationCurveFieldBuilder.cs)
+  ⎿  Read 48 lines (ctrl+o to expand)
+
+● Search(pattern: "**/ProjectUtils.cs")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+● Read(revit-mcp-commandset\Utils\ProjectUtils.cs)
+  ⎿  Read 167 lines (ctrl+o to expand)
+
+● Search(pattern: "**/GeometryUtils.cs")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+● Read(revit-mcp-commandset\Utils\GeometryUtils.cs)
+  ⎿  Read 151 lines (ctrl+o to expand)
+
+● Read(revit-mcp-commandset\Models\Geometry\JZPoint.cs)
+  ⎿  Read 51 lines (ctrl+o to expand)
+
+● Read(revit-mcp-commandset\Models\Geometry\JZLine.cs)
+  ⎿  Read 118 lines (ctrl+o to expand)
+
+● Read(revit-mcp-commandset\Models\Geometry\JZFace.cs)
+  ⎿  Read 30 lines (ctrl+o to expand)
+  ⎿  User rejected Claude's plan:
+     ╭────────────────────────────────────────────────╮
+     │ AIElementFilter 几何字段优化方案               │
+     │                                                │
+     │ 优化目标                                       │
+     │                                                │
+     │ 根据您的建议，将对 AIElementFilter             │
+     │ 的几何字段处理进行以下优化：                   │
+     │                                                │
+     │ 1. 统一 Location 字段处理                      │
+     │                                                │
+     │ 现状问题：                                     │
+     │ - 目前需要用户明确指定 geometry.locationPoint  │
+     │ 或 geometry.locationCurve                      │
+     │ - 返回的坐标值直接暴露在最外层（如 x, y, z,    │
+     │ startX, startY 等）                            │
+     │                                                │
+     │ 优化方案：                                     │
+     │ - 新增统一的 geometry.location                 │
+     │ 字段，自动检测元素的 Location 类型             │
+     │ - 返回格式统一为包装后的对象：                 │
+     │ {                                              │
+     │   "elementId": 123,                            │
+     │   "location": {                                │
+     │     "type": "point",  // 或 "curve"            │
+     │     "data": JZPoint 或 JZLine 对象             │
+     │   }                                            │
+     │ }                                              │
+     │                                                │
+     │ 2. 楼板轮廓获取优化                            │
+     │                                                │
+     │ 现状问题：                                     │
+     │ - 使用 BoundingBox                             │
+     │ 只能获取包围盒，不能获得精确轮廓               │
+     │                                                │
+     │ 优化方案：                                     │
+     │ - 新增 geometry.profile                        │
+     │ 字段，专门获取楼板、天花板等平面构件的轮廓     │
+     │ - 调用 ProjectUtils.GetElementProfile()        │
+     │ 方法获取下表面轮廓                             │
+     │ - 返回格式：                                   │
+     │ {                                              │
+     │   "elementId": 123,                            │
+     │   "profile": [JZFace对象数组]  //              │
+     │ 包含外环和内环(洞口)                           │
+     │ }                                              │
+     │                                                │
+     │ 3. 统一几何数据返回格式                        │
+     │                                                │
+     │ 统一原则：                                     │
+     │ - 所有几何数据都使用 Models/Geometry 下的      │
+     │ JZPoint、JZLine、JZFace 类型                   │
+     │ - 字段名称更加语义化：                         │
+     │   - location - 元素定位信息（点或线）          │
+     │   - profile - 平面轮廓（楼板、天花板等）       │
+     │   - boundingBox - 包围盒（需要时使用）         │
+     │                                                │
+     │ 实施步骤                                       │
+     │                                                │
+     │ Step 1: 创建统一的 LocationFieldBuilder        │
+     │                                                │
+     │ - 文件：Features/ElementFilter/FieldBuilders/Ge│
+     │ ometry/LocationFieldBuilder.cs                 │
+     │ - 自动检测 Location 类型并返回相应的 JZPoint 或│
+     │  JZLine                                        │
+     │                                                │
+     │ Step 2: 创建 ProfileFieldBuilder               │
+     │                                                │
+     │ - 文件：Features/ElementFilter/FieldBuilders/Ge│
+     │ ometry/ProfileFieldBuilder.cs                  │
+     │ - 使用 ProjectUtils.GetElementProfile()        │
+     │ 获取精确轮廓                                   │
+     │ - 支持楼板、天花板、屋顶等平面构件             │
+     │                                                │
+     │ Step 3: 更新 ElementFieldRegistry              │
+     │                                                │
+     │ - 注册新的字段构建器                           │
+     │ - 保留旧字段以保持向后兼容                     │
+     │ - 添加新的预设组合                             │
+     │                                                │
+     │ Step 4: 更新 GeometryUtils                     │
+     │                                                │
+     │ - 确保所有 Revit 到 JZ 几何类型的转换方法完整  │
+     │ - 添加缺失的转换方法（如需要）                 │
+     │                                                │
+     │ Step 5: 测试验证                               │
+     │                                                │
+     │ - 测试统一 location 字段对门窗、墙体的处理     │
+     │ - 测试 profile 字段对楼板的精确轮廓获取        │
+     │ - 确保返回数据格式符合预期                     │
+     │                                                │
+     │ 预期效果                                       │
+     │                                                │
+     │ 优化后的查询结果示例：                         │
+     │ // 门元素                                      │
+     │ {                                              │
+     │   "elementId": 333593,                         │
+     │   "name": "750 x 2000mm",                      │
+     │   "location": {                                │
+     │     "type": "point",                           │
+     │     "data": {"x": 1337.76, "y": 1745.47, "z":  │
+     │ 0}                                             │
+     │   }                                            │
+     │ }                                              │
+     │                                                │
+     │ // 墙元素                                      │
+     │ {                                              │
+     │   "elementId": 333530,                         │
+     │   "name": "常规 - 200mm",                      │
+     │   "location": {                                │
+     │     "type": "curve",                           │
+     │     "data": {                                  │
+     │       "p0": {"x": -3512.24, "y": 1745.47, "z": │
+     │ 0},                                            │
+     │       "p1": {"x": 6187.76, "y": 1745.47, "z":  │
+     │ 0}                                             │
+     │     }                                          │
+     │   }                                            │
+     │ }                                              │
+     │                                                │
+     │ // 楼板元素                                    │
+     │ {                                              │
+     │   "elementId": 333557,                         │
+     │   "name": "常规 - 150mm",                      │
+     │   "profile": [                                 │
+     │     {                                          │
+     │       "outerLoop": [JZLine数组],               │
+     │       "innerLoops": []  // 如有洞口            │
+     │     }                                          │
+     │   ]                                            │
+     │ }                                              │
+     ╰────────────────────────────────────────────────╯
+
+> /export 
+  ⎿  Conversation exported to: 
+     conversation-2025-09-26-141856.txt
+
+> 以下是业务专家对你上述方案提出的修改建议，请你作出
+  回应，进一步优化修改方案：
+  总体方向
+
+  赞成将定位信息、轮廓信息统一输出，但要确保结果使用
+  我们已有的 JZPoint/JZLine/JZFace 类型，而不是手写 
+  type/data 这种弱语义包装。建议 location 
+  字段直接返回 { point: JZPoint } 或 { line: JZLine 
+  }，避免新增 type 字符串让调用方再判断。
+  先对现有的 geometry.locationPoint / 
+  geometry.locationCurve 做兼容：内部委托新的 
+  GeometryLocationFieldBuilder，最终都落到 location 
+  对象上；后续文档明确“推荐使用 geometry.location”。
+  Step 1 调整建议
+
+  GeometryLocationFieldBuilder 中统一处理 
+  LocationPoint 和 LocationCurve：
+  通过 GeometryUtils.ToJZPoint/ToJZLine 做转换；
+  输出结构建议固定写入 context.Result["location"]：
+  location = new { point = jzPoint } 或 location = 
+  new { line = jzLine }；
+  若未来有多段曲线或面状定位，可拓展 location = { 
+  curve: JZCurve, warnings: [...] }。
+  同时保留旧字段：geometry.locationPoint → 
+  location.point，geometry.locationCurve → 
+  location.line。
+  需要在 GeometryUtils 里新增 
+  ToJZPoint(LocationPoint)、ToJZLine(LocationCurve) 
+  这样的入口，避免 builder 内部手写 304.8。
+  Step 2 Profile 构建
+
+  ProfileFieldBuilder 输出结构建议是 
+  context.Result["profile"] = 
+  List<JZFace>；如果用户只想要轮廓线，也可以补一个 
+  geometry.profileLines 作为别名，内部对 
+  face.OuterLoop 做 flatten。
+  ProjectUtils.GetElementProfile() 目前返回 
+  List<JZFace> 已经可用，但要注意：
+  需要处理 normal 参数默认选取下表面（Z=-1），并在楼
+  板厚度较薄时确保有返回；
+  如果获取失败，加 
+  warning（context.AddWarning("未找到可用轮廓")）。
+  Step 3 Registry 更新
+
+  在 RegisterFieldBuilders() 注册新 builder 
+  时，别忘了把旧字段映射为 alias：
+  _fieldPresets["spatialAnalysis"] 可以改为返回 
+  geometry.location+geometry.boundingBox；
+  ResolveFields 
+  中如果解析到旧字段，应自动加入新字段（例如 
+  geometry.locationPoint → geometry.location）。
+  建议在 FieldRegistry 内记录一个 
+  Dictionary<string,string> 
+  的别名映射，兼容旧字段时统一委托。
+  Step 4 GeometryUtils 扩展
+
+  目前 GeometryUtils 缺少对 BoundingBoxXYZ → JZPoint 
+  二次包装的函数，可以新增：
+  ToBoundingBoxInfo(BoundingBoxXYZ) → 
+  BoundingBoxInfo（包含 Min: JZPoint, Max: 
+  JZPoint）；
+  ToJZLines(IEnumerable<Curve>) 帮助 profile 
+  构建循环。
+  同时提醒：ToJZFace(PlanarFace) 现在只处理 Line 
+  曲线，若遇到圆弧会返回 null，需要在文档标注，或在 
+  builder 中捕捉并提示警告。
+  Step 5 测试/文档
+
+  测试 5 需要覆盖：请求 geometry.location 时返回 
+  location.point 或 location.line；
+  新增楼板轮廓测试，验证 profile[0].outerLoop 是 
+  JZLine 数组，且单位换算正确；
+  旧字段兼容性测试：请求 geometry.locationPoint 
+  仍能拿到 location.point。
+  文档方面：
+  更新 Features/ElementFilter/README.md、Geometry/REA
+  DME.md，说明字段结构变化；
+  在 ai_element_filter.ts 中同步提示“几何字段统一挂在
+   location / boundingBox / profile 节点”。
+  其他提醒
+
+  ParameterProcessor 已新增 warning 
+  逻辑，注意在最终响应中观察是否需要 includeWarnings 
+  开关返回；
+  不建议引入参数别名映射（我们已经确定通过 warning + 
+  语言提示解决）。
+  若要处理 LocationCurve 的特殊曲线（比如圆弧），可在
+   builder 中尝试将 Curve 离散化或仅返回起终点，并在 
+  warning 中说明“暂不支持非直线定位”。
+  按上述调整，Claude 的方案会更贴合我们对统一结构、JZ
+   类型复用、轮廓支持的要求，也能兼容已有接口，方便后
+  续测试和文档同步。
+
+✻ Thinking…
+
+  业务专家的建议非常详细和具体，我需要根据这些反馈优化
+  我的方案。主要调整点包括：
+
+  1. 不使用 type/data 这种弱语义包装，而是直接使用 { 
+  point: JZPoint } 或 { line: JZLine }
+  2. 保持向后兼容性，旧字段通过内部委托到新的 
+  GeometryLocationFieldBuilder
+  3. GeometryUtils 需要新增专门的转换方法，避免在 
+  builder 中硬编码 304.8
+  4. profile 字段直接返回 List，而不是包装
+  5. 需要在 Registry 中实现别名映射机制
+  6. 需要处理各种边缘情况并添加适当的警告
+
+  让我重新组织优化方案。
+
+● 感谢业务专家的详细建议！我根据反馈重新优化方案：
+
+✻ Thinking…
+
+  根据专家建议，我需要制定一个更详细、更符合现有架构的
+  优化方案。主要调整：
+
+  1. Location字段返回格式：使用 { point: JZPoint } 或 {
+   line: JZLine } 而不是 type/data 包装
+  2. 保持向后兼容：旧字段通过别名映射到新字段
+  3. GeometryUtils扩展：新增专门的转换方法
+  4. Profile字段：直接返回 List
+  5. 别名映射机制：在Registry中实现
+
+  让我制定完整的方案。
+
+✻ Thinking…
+
+  现在我需要根据专家的反馈制定一个更完善的优化方案。我
+  应该逐条回应专家的建议，并形成一个具体可执行的方案。
+  ⎿  User rejected Claude's plan:
+     ╭────────────────────────────────────────────────╮
+     │ AIElementFilter 几何字段优化方案 v2            │
+     │                                                │
+     │ 根据业务专家建议，制定以下优化方案：           │
+     │                                                │
+     │ 一、核心改进点                                 │
+     │                                                │
+     │ 1. Location字段统一处理                        │
+     │                                                │
+     │ 输出格式优化：                                 │
+     │ - 不使用 type/data 弱语义包装                  │
+     │ - 直接返回 { point: JZPoint } 或 { line: JZLine│
+     │  }                                             │
+     │ - 自动检测元素Location类型，智能返回对应结构   │
+     │                                                │
+     │ 向后兼容策略：                                 │
+     │ - 旧字段 geometry.locationPoint 映射到         │
+     │ location.point                                 │
+     │ - 旧字段 geometry.locationCurve 映射到         │
+     │ location.line                                  │
+     │ - 通过别名映射机制实现，内部委托到新的GeometryL│
+     │ ocationFieldBuilder                            │
+     │                                                │
+     │ 2. Profile轮廓获取                             │
+     │                                                │
+     │ 实现方案：                                     │
+     │ - 直接返回 List<JZFace> 而不是包装结构         │
+     │ - 调用 ProjectUtils.GetElementProfile()        │
+     │ 获取精确轮廓                                   │
+     │ - 默认获取下表面（normal = (0,0,-1)）          │
+     │ - 失败时添加警告：context.AddWarning("未找到可 │
+     │ 用轮廓")                                       │
+     │                                                │
+     │ 3. GeometryUtils扩展                           │
+     │                                                │
+     │ 新增转换方法：                                 │
+     │ // Location转换专用方法                        │
+     │ ToJZPoint(LocationPoint locationPoint)         │
+     │ ToJZLine(LocationCurve locationCurve)          │
+     │                                                │
+     │ // BoundingBox转换                             │
+     │ ToBoundingBoxInfo(BoundingBoxXYZ bbox) → { Min:│
+     │  JZPoint, Max: JZPoint }                       │
+     │                                                │
+     │ // 批量曲线转换                                │
+     │ ToJZLines(IEnumerable<Curve> curves)           │
+     │                                                │
+     │ 4. Registry别名映射机制                        │
+     │                                                │
+     │ 实现内容：                                     │
+     │ - 新增 Dictionary<string, string> _fieldAliases│
+     │  存储别名映射                                  │
+     │ - 旧字段自动委托到新字段处理器                 │
+     │ - ResolveFields中处理别名转换                  │
+     │                                                │
+     │ 二、具体实施步骤                               │
+     │                                                │
+     │ Step 1: 扩展GeometryUtils                      │
+     │                                                │
+     │ 文件: Utils/GeometryUtils.cs                   │
+     │ // 新增方法：                                  │
+     │ public static JZPoint ToJZPoint(LocationPoint  │
+     │ locationPoint)                                 │
+     │ {                                              │
+     │     var point = locationPoint?.Point;          │
+     │     if (point == null) return null;            │
+     │     return new JZPoint(point.X * 304.8, point.Y│
+     │  * 304.8, point.Z * 304.8);                    │
+     │ }                                              │
+     │                                                │
+     │ public static JZLine ToJZLine(LocationCurve    │
+     │ locationCurve)                                 │
+     │ {                                              │
+     │     var curve = locationCurve?.Curve;          │
+     │     if (curve == null) return null;            │
+     │                                                │
+     │     if (curve is Line line)                    │
+     │         return line.ToJZLine();                │
+     │                                                │
+     │     // 处理非直线情况                          │
+     │     var start = curve.GetEndPoint(0);          │
+     │     var end = curve.GetEndPoint(1);            │
+     │     return new JZLine(start.ToJZPoint(),       │
+     │ end.ToJZPoint());                              │
+     │ }                                              │
+     │                                                │
+     │ public class BoundingBoxInfo                   │
+     │ {                                              │
+     │     public JZPoint Min { get; set; }           │
+     │     public JZPoint Max { get; set; }           │
+     │ }                                              │
+     │                                                │
+     │ Step 2: 创建GeometryLocationFieldBuilder       │
+     │                                                │
+     │ 文件: Features/ElementFilter/FieldBuilders/Geom│
+     │ etry/GeometryLocationFieldBuilder.cs           │
+     │ public class GeometryLocationFieldBuilder :    │
+     │ IFieldBuilder                                  │
+     │ {                                              │
+     │     public string FieldName =>                 │
+     │ "geometry.location";                           │
+     │                                                │
+     │     public void Build(FieldContext context)    │
+     │     {                                          │
+     │         var location =                         │
+     │ context.Element.Location;                      │
+     │                                                │
+     │         if (location is LocationPoint locPoint)│
+     │         {                                      │
+     │             var jzPoint =                      │
+     │ GeometryUtils.ToJZPoint(locPoint);             │
+     │             if (jzPoint != null)               │
+     │             {                                  │
+     │                 context.Result["location"] =   │
+     │ new { point = jzPoint };                       │
+     │             }                                  │
+     │         }                                      │
+     │         else if (location is LocationCurve     │
+     │ locCurve)                                      │
+     │         {                                      │
+     │             var jzLine =                       │
+     │ GeometryUtils.ToJZLine(locCurve);              │
+     │             if (jzLine != null)                │
+     │             {                                  │
+     │                 context.Result["location"] =   │
+     │ new { line = jzLine };                         │
+     │                                                │
+     │                 // 如果是非直线，添加警告      │
+     │                 if (!(locCurve.Curve is Line)) │
+     │                 {                              │
+     │                                                │
+     │ context.AddWarning("定位曲线已简化为直线段");  │
+     │                 }                              │
+     │             }                                  │
+     │         }                                      │
+     │     }                                          │
+     │ }                                              │
+     │                                                │
+     │ Step 3: 创建ProfileFieldBuilder                │
+     │                                                │
+     │ 文件: Features/ElementFilter/FieldBuilders/Geom│
+     │ etry/ProfileFieldBuilder.cs                    │
+     │ public class ProfileFieldBuilder :             │
+     │ IFieldBuilder                                  │
+     │ {                                              │
+     │     public string FieldName =>                 │
+     │ "geometry.profile";                            │
+     │                                                │
+     │     public bool CanBuild(Element element)      │
+     │     {                                          │
+     │         // 支持楼板、天花板、屋顶等平面构件    │
+     │         return                                 │
+     │ element.Category?.Id.IntegerValue ==           │
+     │ (int)BuiltInCategory.OST_Floors ||             │
+     │                                                │
+     │ element.Category?.Id.IntegerValue ==           │
+     │ (int)BuiltInCategory.OST_Ceilings ||           │
+     │                                                │
+     │ element.Category?.Id.IntegerValue ==           │
+     │ (int)BuiltInCategory.OST_Roofs;                │
+     │     }                                          │
+     │                                                │
+     │     public void Build(FieldContext context)    │
+     │     {                                          │
+     │         try                                    │
+     │         {                                      │
+     │             var profiles =                     │
+     │ context.Element.GetElementProfile();           │
+     │             if (profiles != null &&            │
+     │ profiles.Count > 0)                            │
+     │             {                                  │
+     │                 context.Result["profile"] =    │
+     │ profiles;                                      │
+     │             }                                  │
+     │             else                               │
+     │             {                                  │
+     │                                                │
+     │ context.AddWarning("未找到可用轮廓");          │
+     │             }                                  │
+     │         }                                      │
+     │         catch (Exception ex)                   │
+     │         {                                      │
+     │             context.AddWarning($"轮廓获取失败: │
+     │ {ex.Message}");                                │
+     │         }                                      │
+     │     }                                          │
+     │ }                                              │
+     │                                                │
+     │ Step 4: 更新ElementFieldRegistry               │
+     │                                                │
+     │ 文件: Features/ElementFilter/FieldBuilders/Elem│
+     │ entFieldRegistry.cs                            │
+     │ public static class ElementFieldRegistry       │
+     │ {                                              │
+     │     // 添加别名映射                            │
+     │     private static readonly Dictionary<string, │
+     │ string> _fieldAliases = new Dictionary<string, │
+     │ string>                                        │
+     │     {                                          │
+     │         ["geometry.locationPoint"] =           │
+     │ "geometry.location",                           │
+     │         ["geometry.locationCurve"] =           │
+     │ "geometry.location",                           │
+     │     };                                         │
+     │                                                │
+     │     // 修改ResolveFields方法                   │
+     │     private static HashSet<string>             │
+     │ ResolveFields(List<string> fields, List<string>│
+     │  fieldPresets)                                 │
+     │     {                                          │
+     │         var resolvedFields = new               │
+     │ HashSet<string>();                             │
+     │                                                │
+     │         if (fields != null)                    │
+     │         {                                      │
+     │             foreach (var field in fields)      │
+     │             {                                  │
+     │                 // 处理别名                    │
+     │                 if                             │
+     │ (_fieldAliases.TryGetValue(field, out var      │
+     │ actualField))                                  │
+     │                 {                              │
+     │                                                │
+     │ resolvedFields.Add(actualField);               │
+     │                     //                         │
+     │ 可选：添加向后兼容处理标记                     │
+     │                 }                              │
+     │                 else                           │
+     │                 {                              │
+     │                     resolvedFields.Add(field); │
+     │                 }                              │
+     │             }                                  │
+     │         }                                      │
+     │                                                │
+     │         // ... 预设处理逻辑                    │
+     │                                                │
+     │         return resolvedFields;                 │
+     │     }                                          │
+     │                                                │
+     │     // 更新预设                                │
+     │     private static void RegisterFieldPresets() │
+     │     {                                          │
+     │         _fieldPresets["spatialAnalysis"] =     │
+     │ new[]                                          │
+     │         {                                      │
+     │             "geometry.location",     //        │
+     │ 替代旧的locationPoint/locationCurve            │
+     │             "geometry.boundingBox"             │
+     │         };                                     │
+     │                                                │
+     │         _fieldPresets["floorAnalysis"] = new[] │
+     │         {                                      │
+     │             "name",                            │
+     │             "category",                        │
+     │             "geometry.profile",      //        │
+     │ 新增楼板分析预设                               │
+     │             "geometry.boundingBox"             │
+     │         };                                     │
+     │     }                                          │
+     │ }                                              │
+     │                                                │
+     │ Step 5: 兼容性处理                             │
+     │                                                │
+     │ 旧字段Builder更新：                            │
+     │ // LocationPointFieldBuilder.cs - 改为委托     │
+     │ public class LocationPointFieldBuilder :       │
+     │ IFieldBuilder                                  │
+     │ {                                              │
+     │     public void Build(FieldContext context)    │
+     │     {                                          │
+     │         // 委托给新的统一处理器                │
+     │         var unifiedBuilder = new               │
+     │ GeometryLocationFieldBuilder();                │
+     │         unifiedBuilder.Build(context);         │
+     │                                                │
+     │         //                                     │
+     │ 提取point部分到旧格式位置（向后兼容）          │
+     │         if                                     │
+     │ (context.Result.TryGetValue("location", out var│
+     │  location))                                    │
+     │         {                                      │
+     │             var locObj = location as dynamic;  │
+     │             if (locObj?.point != null)         │
+     │             {                                  │
+     │                 var point = locObj.point as    │
+     │ JZPoint;                                       │
+     │                 context.Result["x"] = point.X; │
+     │                 context.Result["y"] = point.Y; │
+     │                 context.Result["z"] = point.Z; │
+     │             }                                  │
+     │         }                                      │
+     │     }                                          │
+     │ }                                              │
+     │                                                │
+     │ 三、测试验证计划                               │
+     │                                                │
+     │ 测试用例：                                     │
+     │                                                │
+     │ 1. 统一location字段测试                        │
+     │   - 门窗返回 location.point                    │
+     │   - 墙体返回 location.line                     │
+     │   - 非直线墙体返回简化直线+警告                │
+     │ 2. 楼板profile测试                             │
+     │   - 简单矩形楼板返回完整轮廓                   │
+     │   - 带洞口楼板返回外环+内环                    │
+     │   - 无法获取轮廓时返回警告                     │
+     │ 3. 向后兼容测试                                │
+     │   - 请求geometry.locationPoint仍能获取数据     │
+     │   - 请求geometry.locationCurve仍能获取数据     │
+     │ 4. 组合查询测试                                │
+     │   - 同时请求location+profile+boundingBox       │
+     │                                                │
+     │ 四、预期输出示例                               │
+     │                                                │
+     │ // 门元素 - 新格式                             │
+     │ {                                              │
+     │   "elementId": 333593,                         │
+     │   "name": "750 x 2000mm",                      │
+     │   "location": {                                │
+     │     "point": {"x": 1337.76, "y": 1745.47, "z": │
+     │ 0}                                             │
+     │   }                                            │
+     │ }                                              │
+     │                                                │
+     │ // 墙元素 - 新格式                             │
+     │ {                                              │
+     │   "elementId": 333530,                         │
+     │   "name": "常规 - 200mm",                      │
+     │   "location": {                                │
+     │     "line": {                                  │
+     │       "p0": {"x": -3512.24, "y": 1745.47, "z": │
+     │ 0},                                            │
+     │       "p1": {"x": 6187.76, "y": 1745.47, "z":  │
+     │ 0}                                             │
+     │     }                                          │
+     │   }                                            │
+     │ }                                              │
+     │                                                │
+     │ // 楼板元素 - 含轮廓                           │
+     │ {                                              │
+     │   "elementId": 333557,                         │
+     │   "name": "常规 - 150mm",                      │
+     │   "profile": [                                 │
+     │     {                                          │
+     │       "outerLoop": [                           │
+     │         {"p0": {...}, "p1": {...}},            │
+     │         {"p0": {...}, "p1": {...}}             │
+     │       ],                                       │
+     │       "innerLoops": []                         │
+     │     }                                          │
+     │   ]                                            │
+     │ }                                              │
+     │                                                │
+     │ 这个方案充分采纳了专家建议，保持了强语义的JZ类 │
+     │ 型，实现了向后兼容，并提供了更精确的几何信息获 │
+     │ 取能力。                                       │
+     │                                                │
+     ╰────────────────────────────────────────────────╯
+
+> /export 
+  ⎿  Conversation exported to: 
+     conversation-2025-09-26-142512.txt
+
+> 统一字段设计
+
+  建议彻底移除 
+  geometry.locationPoint、geometry.locationCurve 
+  等旧字段名称，并在 FilterSetting、README、测试脚本
+  中全部替换为新的统一字段（如 
+  geometry.location.point / geometry.location.line 
+  或简写 geometry.location）。同时更新 
+  ElementFieldRegistry 的注册表和校验逻辑，只保留新的
+  字段枚举，确保不存在“别名”或“兼容分支”。
+  同步调整 FieldContext 
+  返回结构：context.Result["location"] 应直接写入 
+  JZPoint 或 JZLine 对象，外层不再需要 
+  type/data。比如 location = new LocationInfo { Point
+   = point }，LocationInfo 可放在 Models.Geometry 
+  下，保持序列化统一。
+  清理所有旧字段在文档、测试、客户端脚本中的引用，保
+  证没有历史字段残留。
+  几何类型与工具类
+
+  在 GeometryUtils 
+  中补齐转换入口（FromLocationPoint、FromLocationCurv
+  e、FromBoundingBoxXYZ、FromCurveLoop），所有 
+  builder 必须通过这些工具返回 
+  JZPoint/JZLine/JZFace，避免散落的 304.8 乘法。
+  对轮廓（Profile）推荐新建 
+  ProfileFieldBuilder，直接返回 
+  List<JZFace>。如需额外封装，可新增 GeometryProfile 
+  类型，但必须放在 Models.Geometry 下，便于未来扩展。
+  结构化响应
+
+  BoundingBox builder 改为输出 BoundingBoxInfo（含 
+  Min/Max 两个 JZPoint），并统一字段命名 boundingBox.
+  建议将所有几何字段集中在 geometry 节点，例如：
+  geometry: {
+      location: { point: JZPoint },
+      boundingBox: { min: JZPoint, max: JZPoint },
+      profile: [JZFace]
+  }
+  便于调用方按模块读取，且保持层级清晰。
+  移除兼容代码
+
+  在 ElementFieldRegistry.ResolveFields 
+  中删除对未知字段的自动放行逻辑，改为直接报错或加入 
+  warning，强制调用方使用新字段。
+  删除所有关于旧字段的文档、示例和测试，避免后续维护
+  时出现“兼容路径”再生。
+  测试与校验
+
+  更新现有几何测试，使用新格式验证门的 
+  location.point、墙的 location.line、楼板的 
+  profile，以及 bounding box 的 min/max。
+  添加组合测试，确认 fields: ["geometry.location","ge
+  ometry.profile","geometry.boundingBox"] 
+  时输出层级正确且没有额外字段。
+  相关模块同步
+
+  RevitStatus 模块需补充当前语言字段（已在前述需求里
+  提过），但这里再提醒：结构化为 
+  status.application.language，方便服务端脚本引用。
+  ai_element_filter.ts 
+  更新字段枚举列表和示例，强调必须按新的 geometry.* 
+  输出结构请求。
+  整体目标是：在 v3 阶段直接完成字段重构、去掉兼容分
+  支，保证几何数据全部使用自家模型类型，并保持输出层
+  级一致，为后续扩展打下干净的基础。
+
+● 感谢专家的明确指导！根据建议，我将制定一个彻底的v
+  3版本重构方案，完全移除旧字段，实现干净的几何字段
+  架构。
+  ⎿  User rejected Claude's plan:
+     ╭────────────────────────────────────────────────╮
+     │ AIElementFilter 几何字段重构方案 v3（彻底版）  │
+     │                                                │
+     │ 一、核心设计原则                               │
+     │                                                │
+     │ 1. 完全移除旧字段                              │
+     │                                                │
+     │ - 删除：geometry.locationPoint、geometry.locati│
+     │ onCurve                                        │
+     │ - 不保留任何兼容代码或别名机制                 │
+     │ - 统一使用：geometry.location 字段             │
+     │                                                │
+     │ 2. 结构化几何输出                              │
+     │                                                │
+     │ 所有几何数据统一在 geometry 节点下：           │
+     │ {                                              │
+     │   "elementId": 123,                            │
+     │   "geometry": {                                │
+     │     "location": JZPoint 或 JZLine,  //         │
+     │ 直接对象，无包装                               │
+     │     "boundingBox": BoundingBoxInfo, // {min:   │
+     │ JZPoint, max: JZPoint}                         │
+     │     "profile": [JZFace]             // 轮廓数组│
+     │   }                                            │
+     │ }                                              │
+     │                                                │
+     │ 3. 强类型模型                                  │
+     │                                                │
+     │ 在 Models/Geometry 下新增：                    │
+     │ - LocationInfo.cs - 统一位置信息类             │
+     │ - BoundingBoxInfo.cs - 包围盒信息类            │
+     │                                                │
+     │ 二、实施步骤                                   │
+     │                                                │
+     │ Step 1: 创建新的几何模型类                     │
+     │                                                │
+     │ 文件：Models/Geometry/LocationInfo.cs          │
+     │ public class LocationInfo                      │
+     │ {                                              │
+     │     [JsonProperty("point", NullValueHandling = │
+     │ NullValueHandling.Ignore)]                     │
+     │     public JZPoint Point { get; set; }         │
+     │                                                │
+     │     [JsonProperty("line", NullValueHandling =  │
+     │ NullValueHandling.Ignore)]                     │
+     │     public JZLine Line { get; set; }           │
+     │ }                                              │
+     │                                                │
+     │ 文件：Models/Geometry/BoundingBoxInfo.cs       │
+     │ public class BoundingBoxInfo                   │
+     │ {                                              │
+     │     [JsonProperty("min")]                      │
+     │     public JZPoint Min { get; set; }           │
+     │                                                │
+     │     [JsonProperty("max")]                      │
+     │     public JZPoint Max { get; set; }           │
+     │ }                                              │
+     │                                                │
+     │ Step 2: 扩展GeometryUtils（集中转换逻辑）      │
+     │                                                │
+     │ 文件：Utils/GeometryUtils.cs                   │
+     │ // 新增Location转换方法                        │
+     │ public static LocationInfo                     │
+     │ FromLocation(Location location)                │
+     │ {                                              │
+     │     if (location == null) return null;         │
+     │                                                │
+     │     var info = new LocationInfo();             │
+     │                                                │
+     │     if (location is LocationPoint locPoint)    │
+     │     {                                          │
+     │         info.Point =                           │
+     │ FromLocationPoint(locPoint);                   │
+     │     }                                          │
+     │     else if (location is LocationCurve         │
+     │ locCurve)                                      │
+     │     {                                          │
+     │         info.Line =                            │
+     │ FromLocationCurve(locCurve);                   │
+     │     }                                          │
+     │                                                │
+     │     return info;                               │
+     │ }                                              │
+     │                                                │
+     │ public static JZPoint                          │
+     │ FromLocationPoint(LocationPoint locationPoint) │
+     │ {                                              │
+     │     var point = locationPoint?.Point;          │
+     │     if (point == null) return null;            │
+     │     return new JZPoint(point.X * 304.8, point.Y│
+     │  * 304.8, point.Z * 304.8);                    │
+     │ }                                              │
+     │                                                │
+     │ public static JZLine                           │
+     │ FromLocationCurve(LocationCurve locationCurve) │
+     │ {                                              │
+     │     var curve = locationCurve?.Curve;          │
+     │     if (curve == null) return null;            │
+     │                                                │
+     │     // 统一处理各种曲线类型                    │
+     │     var start = curve.GetEndPoint(0);          │
+     │     var end = curve.GetEndPoint(1);            │
+     │     return new JZLine(                         │
+     │         start.X * 304.8, start.Y * 304.8,      │
+     │ start.Z * 304.8,                               │
+     │         end.X * 304.8, end.Y * 304.8, end.Z *  │
+     │ 304.8                                          │
+     │     );                                         │
+     │ }                                              │
+     │                                                │
+     │ public static BoundingBoxInfo                  │
+     │ FromBoundingBoxXYZ(BoundingBoxXYZ bbox)        │
+     │ {                                              │
+     │     if (bbox == null) return null;             │
+     │     return new BoundingBoxInfo                 │
+     │     {                                          │
+     │         Min = new JZPoint(bbox.Min.X * 304.8,  │
+     │ bbox.Min.Y * 304.8, bbox.Min.Z * 304.8),       │
+     │         Max = new JZPoint(bbox.Max.X * 304.8,  │
+     │ bbox.Max.Y * 304.8, bbox.Max.Z * 304.8)        │
+     │     };                                         │
+     │ }                                              │
+     │                                                │
+     │ public static List<JZLine>                     │
+     │ FromCurveLoop(CurveLoop curveLoop)             │
+     │ {                                              │
+     │     var lines = new List<JZLine>();            │
+     │     foreach (Curve curve in curveLoop)         │
+     │     {                                          │
+     │         var start = curve.GetEndPoint(0);      │
+     │         var end = curve.GetEndPoint(1);        │
+     │         lines.Add(new JZLine(                  │
+     │             start.X * 304.8, start.Y * 304.8,  │
+     │ start.Z * 304.8,                               │
+     │             end.X * 304.8, end.Y * 304.8, end.Z│
+     │  * 304.8                                       │
+     │         ));                                    │
+     │     }                                          │
+     │     return lines;                              │
+     │ }                                              │
+     │                                                │
+     │ Step 3: 创建新的字段构建器                     │
+     │                                                │
+     │ 文件：Features/ElementFilter/FieldBuilders/Geom│
+     │ etry/LocationFieldBuilder.cs                   │
+     │ public class LocationFieldBuilder :            │
+     │ IFieldBuilder                                  │
+     │ {                                              │
+     │     public string FieldName =>                 │
+     │ "geometry.location";                           │
+     │                                                │
+     │     public bool CanBuild(Element element)      │
+     │     {                                          │
+     │         return element?.Location != null;      │
+     │     }                                          │
+     │                                                │
+     │     public void Build(FieldContext context)    │
+     │     {                                          │
+     │         try                                    │
+     │         {                                      │
+     │             var location =                     │
+     │ context.Element.Location;                      │
+     │                                                │
+     │             // 确保geometry节点存在            │
+     │             if                                 │
+     │ (!context.Result.ContainsKey("geometry"))      │
+     │                 context.Result["geometry"] =   │
+     │ new Dictionary<string, object>();              │
+     │                                                │
+     │             var geoDict =                      │
+     │ context.Result["geometry"] as                  │
+     │ Dictionary<string, object>;                    │
+     │                                                │
+     │             if (location is LocationPoint      │
+     │ locPoint)                                      │
+     │             {                                  │
+     │                 var point =                    │
+     │ GeometryUtils.FromLocationPoint(locPoint);     │
+     │                 if (point != null)             │
+     │                     geoDict["location"] =      │
+     │ point;                                         │
+     │             }                                  │
+     │             else if (location is LocationCurve │
+     │ locCurve)                                      │
+     │             {                                  │
+     │                 var line =                     │
+     │ GeometryUtils.FromLocationCurve(locCurve);     │
+     │                 if (line != null)              │
+     │                 {                              │
+     │                     geoDict["location"] = line;│
+     │                                                │
+     │                     // 非直线警告              │
+     │                     if (!(locCurve.Curve is    │
+     │ Line))                                         │
+     │                                                │
+     │ context.AddWarning("定位曲线已简化为直线段");  │
+     │                 }                              │
+     │             }                                  │
+     │         }                                      │
+     │         catch (Exception ex)                   │
+     │         {                                      │
+     │                                                │
+     │ context.AddWarning($"获取位置信息失败:         │
+     │ {ex.Message}");                                │
+     │         }                                      │
+     │     }                                          │
+     │ }                                              │
+     │                                                │
+     │ 文件：Features/ElementFilter/FieldBuilders/Geom│
+     │ etry/ProfileFieldBuilder.cs                    │
+     │ public class ProfileFieldBuilder :             │
+     │ IFieldBuilder                                  │
+     │ {                                              │
+     │     public string FieldName =>                 │
+     │ "geometry.profile";                            │
+     │                                                │
+     │     public bool CanBuild(Element element)      │
+     │     {                                          │
+     │         var category =                         │
+     │ element?.Category?.Id.IntegerValue;            │
+     │         return category ==                     │
+     │ (int)BuiltInCategory.OST_Floors ||             │
+     │                category ==                     │
+     │ (int)BuiltInCategory.OST_Ceilings ||           │
+     │                category ==                     │
+     │ (int)BuiltInCategory.OST_Roofs;                │
+     │     }                                          │
+     │                                                │
+     │     public void Build(FieldContext context)    │
+     │     {                                          │
+     │         try                                    │
+     │         {                                      │
+     │             var profiles =                     │
+     │ context.Element.GetElementProfile();           │
+     │                                                │
+     │             if                                 │
+     │ (!context.Result.ContainsKey("geometry"))      │
+     │                 context.Result["geometry"] =   │
+     │ new Dictionary<string, object>();              │
+     │                                                │
+     │             var geoDict =                      │
+     │ context.Result["geometry"] as                  │
+     │ Dictionary<string, object>;                    │
+     │                                                │
+     │             if (profiles != null &&            │
+     │ profiles.Count > 0)                            │
+     │             {                                  │
+     │                 geoDict["profile"] = profiles; │
+     │             }                                  │
+     │             else                               │
+     │             {                                  │
+     │                                                │
+     │ context.AddWarning("未找到可用轮廓");          │
+     │             }                                  │
+     │         }                                      │
+     │         catch (Exception ex)                   │
+     │         {                                      │
+     │             context.AddWarning($"轮廓获取失败: │
+     │ {ex.Message}");                                │
+     │         }                                      │
+     │     }                                          │
+     │ }                                              │
+     │                                                │
+     │ 文件：Features/ElementFilter/FieldBuilders/Geom│
+     │ etry/BoundingBoxFieldBuilder.cs（更新）        │
+     │ public class BoundingBoxFieldBuilder :         │
+     │ IFieldBuilder                                  │
+     │ {                                              │
+     │     public string FieldName =>                 │
+     │ "geometry.boundingBox";                        │
+     │                                                │
+     │     public void Build(FieldContext context)    │
+     │     {                                          │
+     │         try                                    │
+     │         {                                      │
+     │             var bbox =                         │
+     │ context.Element.get_BoundingBox(null);         │
+     │             if (bbox == null) return;          │
+     │                                                │
+     │             if                                 │
+     │ (!context.Result.ContainsKey("geometry"))      │
+     │                 context.Result["geometry"] =   │
+     │ new Dictionary<string, object>();              │
+     │                                                │
+     │             var geoDict =                      │
+     │ context.Result["geometry"] as                  │
+     │ Dictionary<string, object>;                    │
+     │             geoDict["boundingBox"] =           │
+     │ GeometryUtils.FromBoundingBoxXYZ(bbox);        │
+     │         }                                      │
+     │         catch                                  │
+     │         {                                      │
+     │             // 静默失败                        │
+     │         }                                      │
+     │     }                                          │
+     │ }                                              │
+     │                                                │
+     │ Step 4:                                        │
+     │ 更新ElementFieldRegistry（删除所有兼容代码）   │
+     │                                                │
+     │ 文件：Features/ElementFilter/FieldBuilders/Elem│
+     │ entFieldRegistry.cs                            │
+     │ public static class ElementFieldRegistry       │
+     │ {                                              │
+     │     // 删除所有旧字段相关代码                  │
+     │     private static readonly Dictionary<string, │
+     │ IFieldBuilder> _fieldBuilders = new();         │
+     │     private static readonly Dictionary<string, │
+     │ string[]> _fieldPresets = new();               │
+     │                                                │
+     │     static ElementFieldRegistry()              │
+     │     {                                          │
+     │         RegisterFieldBuilders();               │
+     │         RegisterFieldPresets();                │
+     │     }                                          │
+     │                                                │
+     │     private static void RegisterFieldBuilders()│
+     │     {                                          │
+     │         //                                     │
+     │ 删除旧的LocationPoint和LocationCurve构建器     │
+     │         // 只注册新的统一构建器                │
+     │         RegisterBuilder(new                    │
+     │ LocationFieldBuilder());                       │
+     │         RegisterBuilder(new                    │
+     │ ProfileFieldBuilder());                        │
+     │         RegisterBuilder(new                    │
+     │ BoundingBoxFieldBuilder());                    │
+     │         // ... 其他构建器                      │
+     │     }                                          │
+     │                                                │
+     │     private static void RegisterFieldPresets() │
+     │     {                                          │
+     │         _fieldPresets["spatialAnalysis"] =     │
+     │ new[]                                          │
+     │         {                                      │
+     │             "geometry.location",               │
+     │             "geometry.boundingBox"             │
+     │         };                                     │
+     │                                                │
+     │         _fieldPresets["floorAnalysis"] = new[] │
+     │         {                                      │
+     │             "name",                            │
+     │             "category",                        │
+     │             "geometry.profile",                │
+     │             "geometry.boundingBox"             │
+     │         };                                     │
+     │     }                                          │
+     │                                                │
+     │     // ResolveFields方法 - 删除兼容逻辑        │
+     │     private static HashSet<string>             │
+     │ ResolveFields(List<string> fields, List<string>│
+     │  fieldPresets)                                 │
+     │     {                                          │
+     │         var resolvedFields = new               │
+     │ HashSet<string>();                             │
+     │                                                │
+     │         if (fields != null)                    │
+     │         {                                      │
+     │             foreach (var field in fields)      │
+     │             {                                  │
+     │                 // 验证字段是否注册            │
+     │                 if (!IsFieldRegistered(field)) │
+     │                 {                              │
+     │                     //                         │
+     │ 直接报错或加警告，不自动放行                   │
+     │                     throw new                  │
+     │ ArgumentException($"未知字段: {field}");       │
+     │                 }                              │
+     │                 resolvedFields.Add(field);     │
+     │             }                                  │
+     │         }                                      │
+     │                                                │
+     │         // 处理预设                            │
+     │         if (fieldPresets != null)              │
+     │         {                                      │
+     │             foreach (var preset in             │
+     │ fieldPresets)                                  │
+     │             {                                  │
+     │                 if                             │
+     │ (_fieldPresets.TryGetValue(preset, out var     │
+     │ presetFields))                                 │
+     │                 {                              │
+     │                     foreach (var field in      │
+     │ presetFields)                                  │
+     │                                                │
+     │ resolvedFields.Add(field);                     │
+     │                 }                              │
+     │             }                                  │
+     │         }                                      │
+     │                                                │
+     │         return resolvedFields;                 │
+     │     }                                          │
+     │ }                                              │
+     │                                                │
+     │ Step 5: 删除旧字段构建器文件                   │
+     │                                                │
+     │ 删除以下文件：                                 │
+     │ - LocationPointFieldBuilder.cs                 │
+     │ - LocationCurveFieldBuilder.cs                 │
+     │                                                │
+     │ Step 6: 更新FilterSetting模型                  │
+     │                                                │
+     │ 文件：Features/ElementFilter/Models/FilterSetti│
+     │ ng.cs                                          │
+     │ // 更新字段枚举，删除旧字段                    │
+     │ public class FilterSetting                     │
+     │ {                                              │
+     │     // 更新文档注释，只保留新字段              │
+     │     /// <summary>                              │
+     │     /// 可用字段：                             │
+     │     /// - name                                 │
+     │     /// - category                             │
+     │     /// - geometry.location                    │
+     │     /// - geometry.boundingBox                 │
+     │     /// - geometry.profile                     │
+     │     /// </summary>                             │
+     │     [JsonProperty("fields")]                   │
+     │     public List<string> Fields { get; set; }   │
+     │ }                                              │
+     │                                                │
+     │ 三、测试计划                                   │
+     │                                                │
+     │ 1. 单元测试更新                                │
+     │                                                │
+     │ // 测试统一location字段                        │
+     │ [Test]                                         │
+     │ public void TestUnifiedLocation()              │
+     │ {                                              │
+     │     // 门测试 - 返回JZPoint                    │
+     │     var doorResult = filter.Execute(new {      │
+     │ fields = new[] { "geometry.location" } });     │
+     │     Assert.IsInstanceOf<JZPoint>(doorResult["ge│
+     │ ometry"]["location"]);                         │
+     │                                                │
+     │     // 墙测试 - 返回JZLine                     │
+     │     var wallResult = filter.Execute(new {      │
+     │ fields = new[] { "geometry.location" } });     │
+     │     Assert.IsInstanceOf<JZLine>(wallResult["geo│
+     │ metry"]["location"]);                          │
+     │ }                                              │
+     │                                                │
+     │ // 测试楼板轮廓                                │
+     │ [Test]                                         │
+     │ public void TestFloorProfile()                 │
+     │ {                                              │
+     │     var result = filter.Execute(new { fields = │
+     │ new[] { "geometry.profile" } });               │
+     │     Assert.IsInstanceOf<List<JZFace>>(result["g│
+     │ eometry"]["profile"]);                         │
+     │ }                                              │
+     │                                                │
+     │ // 测试组合查询                                │
+     │ [Test]                                         │
+     │ public void TestCombinedGeometry()             │
+     │ {                                              │
+     │     var result = filter.Execute(new {          │
+     │         fields = new[] { "geometry.location",  │
+     │ "geometry.profile", "geometry.boundingBox" }   │
+     │     });                                        │
+     │                                                │
+     │                                                │
+     │ Assert.IsTrue(result.ContainsKey("geometry")); │
+     │     var geo = result["geometry"] as            │
+     │ Dictionary<string, object>;                    │
+     │     Assert.IsTrue(geo.ContainsKey("location"));│
+     │                                                │
+     │ Assert.IsTrue(geo.ContainsKey("boundingBox")); │
+     │ }                                              │
+     │                                                │
+     │ 2. 集成测试                                    │
+     │                                                │
+     │ - 测试各类元素的location返回正确类型           │
+     │ - 测试楼板profile返回完整轮廓                  │
+     │ - 测试boundingBox返回min/max结构               │
+     │ - 测试错误字段抛出异常                         │
+     │                                                │
+     │ 四、文档更新                                   │
+     │                                                │
+     │ README.md更新                                  │
+     │                                                │
+     │ ## 几何字段                                    │
+     │                                                │
+     │ 所有几何信息统一在 `geometry` 节点下：         │
+     │                                                │
+     │ - `geometry.location` -                        │
+     │ 元素位置（JZPoint或JZLine）                    │
+     │ - `geometry.boundingBox` - 包围盒（含min/max） │
+     │                                                │
+     │ - `geometry.profile` - 平面轮廓（List<JZFace>）│
+     │                                                │
+     │ ### 示例                                       │
+     │ 请求：                                         │
+     │ fields: ["geometry.location",                  │
+     │ "geometry.boundingBox"]                        │
+     │                                                │
+     │ 返回：                                         │
+     │ {                                              │
+     │   "elementId": 123,                            │
+     │   "geometry": {                                │
+     │     "location": {"x": 100, "y": 200, "z": 0},  │
+     │ // JZPoint                                     │
+     │     "boundingBox": {                           │
+     │       "min": {"x": 0, "y": 0, "z": 0},         │
+     │       "max": {"x": 200, "y": 400, "z": 300}    │
+     │     }                                          │
+     │   }                                            │
+     │ }                                              │
+     │                                                │
+     │ 五、预期成果                                   │
+     │                                                │
+     │ 1. 代码清洁度：完全移除旧字段和兼容代码        │
+     │ 2. 类型安全：所有几何数据使用强类型JZ模型      │
+     │ 3. 结构统一：所有几何数据在geometry节点下      │
+     │ 4. 无304.8散落：所有单位转换集中在GeometryUtils│
+     │ 5. 易于扩展：清晰的架构便于后续添加新几何字段  │
+     │                                                │
+     │ 这个v3方案实现了彻底的重构，没有任何历史包袱， │
+     │ 为未来发展奠定干净基础。                       │
+     │                                                │
+     │                                                │
+     │                                                │
+     │                                                │
+     │                                                │
+     │                                                │
+     ╰────────────────────────────────────────────────╯
+
+> /export 
+  ⎿  Conversation copied to clipboard
+
+> /export 
+  ⎿  Conversation exported to: 
+     conversation-2025-09-26-143217.txt
+
+> 总体确认
+
+  v3 方案已经完全遵循“只保留新字段”的要求：旧的 
+  geometry.locationPoint/Curve 
+  等都会被移除，改成统一的 geometry 节点，并配套新增 
+  LocationInfo、BoundingBoxInfo 
+  等模型。我支持按照这个方向推进。
+  细节校准建议
+
+  LocationInfo 的序列化最好保持显式结构：{"location":
+  {"point":{...}}} 或 {"location":{"line":{"p0":...,"
+  p1":...}}}。文档示例目前直接显示成 
+  {"location":{"x":...}} 容易误导，请同步改成与 
+  LocationInfo 实际 JSON 一致的写法。
+  在 GeometryUtils.FromLocation 里建议明确返回 
+  null（并写 warning）时的行为；同时可以针对 
+  LocationCurve 非直线场景注明暂不支持或做细化处理。
+  ProfileFieldBuilder 应保证只输出 
+  List<JZFace>；若遇到非线性边（例如圆弧）目前 
+  ToJZFace 会返回 null，建议补充 
+  warning，文档里也写明限制。
+  删除旧字段后，要在测试中添加断言：响应里不存在 loca
+  tionPoint/locationCurve，并验证新的层级结构，例如 
+  geometry.location, geometry.boundingBox.min/max, 
+  geometry.profile.
+  README 与 ai_element_filter.ts 
+  的示例请全部改成新字段调用方式，同时说明 geometry 
+  节点是一个整体模块，可按需选择 
+  location/profile/boundingBox 等子项。
+  按上述点微调后，就可以着手实现和测试。需要我协助先
+  落哪一部分（例如 GeometryUtils 扩展或 Profile 
+  构建器）可以再告诉我。
+
+● 感谢专家的确认和细节校准建议！我根据反馈完善方案
+  细节：
+  ⎿  User rejected Claude's plan:
+     ╭────────────────────────────────────────────────╮
+     │ AIElementFilter 几何字段重构方案 v3（最终版）  │
+     │                                                │
+     │ 一、核心确认                                   │
+     │                                                │
+     │ 完全移除旧字段                                 │
+     │ geometry.locationPoint/locationCurve，统一使用 │
+     │ geometry 节点，实现彻底重构。                  │
+     │                                                │
+     │ 二、细节校准后的实施方案                       │
+     │                                                │
+     │ 1. LocationInfo 模型（明确序列化结构）         │
+     │                                                │
+     │ 文件：Models/Geometry/LocationInfo.cs          │
+     │ /// <summary>                                  │
+     │ /// 统一的位置信息类                           │
+     │ /// 序列化时只会包含point或line其中一个        │
+     │ /// </summary>                                 │
+     │ public class LocationInfo                      │
+     │ {                                              │
+     │     [JsonProperty("point", NullValueHandling = │
+     │ NullValueHandling.Ignore)]                     │
+     │     public JZPoint Point { get; set; }         │
+     │                                                │
+     │     [JsonProperty("line", NullValueHandling =  │
+     │ NullValueHandling.Ignore)]                     │
+     │     public JZLine Line { get; set; }           │
+     │ }                                              │
+     │                                                │
+     │ 实际JSON输出示例：                             │
+     │ // 点定位（门窗等）                            │
+     │ {                                              │
+     │   "geometry": {                                │
+     │     "location": {                              │
+     │       "point": {"x": 1337.76, "y": 1745.47,    │
+     │ "z": 0}                                        │
+     │     }                                          │
+     │   }                                            │
+     │ }                                              │
+     │                                                │
+     │ // 线定位（墙体等）                            │
+     │ {                                              │
+     │   "geometry": {                                │
+     │     "location": {                              │
+     │       "line": {                                │
+     │         "p0": {"x": -3512.24, "y": 1745.47,    │
+     │ "z": 0},                                       │
+     │         "p1": {"x": 6187.76, "y": 1745.47, "z":│
+     │  0}                                            │
+     │       }                                        │
+     │     }                                          │
+     │   }                                            │
+     │ }                                              │
+     │                                                │
+     │ 2. GeometryUtils 完善（明确异常处理）          │
+     │                                                │
+     │ 文件：Utils/GeometryUtils.cs                   │
+     │ /// <summary>                                  │
+     │ /// 从Revit Location转换为LocationInfo         │
+     │ /// </summary>                                 │
+     │ public static LocationInfo                     │
+     │ FromLocation(Location location, FieldContext   │
+     │ context = null)                                │
+     │ {                                              │
+     │     if (location == null)                      │
+     │     {                                          │
+     │                                                │
+     │ context?.AddWarning("元素没有位置信息");       │
+     │         return null;                           │
+     │     }                                          │
+     │                                                │
+     │     var info = new LocationInfo();             │
+     │                                                │
+     │     if (location is LocationPoint locPoint)    │
+     │     {                                          │
+     │         info.Point =                           │
+     │ FromLocationPoint(locPoint);                   │
+     │         if (info.Point == null)                │
+     │                                                │
+     │ context?.AddWarning("无法获取点位置信息");     │
+     │     }                                          │
+     │     else if (location is LocationCurve         │
+     │ locCurve)                                      │
+     │     {                                          │
+     │         info.Line = FromLocationCurve(locCurve,│
+     │  context);                                     │
+     │         if (info.Line == null)                 │
+     │                                                │
+     │ context?.AddWarning("无法获取线位置信息");     │
+     │     }                                          │
+     │     else                                       │
+     │     {                                          │
+     │         context?.AddWarning($"不支持的位置类型:│
+     │  {location.GetType().Name}");                  │
+     │         return null;                           │
+     │     }                                          │
+     │                                                │
+     │     return info;                               │
+     │ }                                              │
+     │                                                │
+     │ /// <summary>                                  │
+     │ /// LocationCurve转JZLine（处理非直线）        │
+     │ /// </summary>                                 │
+     │ public static JZLine                           │
+     │ FromLocationCurve(LocationCurve locationCurve, │
+     │ FieldContext context = null)                   │
+     │ {                                              │
+     │     var curve = locationCurve?.Curve;          │
+     │     if (curve == null) return null;            │
+     │                                                │
+     │     // 获取起点和终点                          │
+     │     var start = curve.GetEndPoint(0);          │
+     │     var end = curve.GetEndPoint(1);            │
+     │                                                │
+     │     // 如果不是直线，添加警告                  │
+     │     if (!(curve is Line))                      │
+     │     {                                          │
+     │         context?.AddWarning($"定位曲线类型     │
+     │ {curve.GetType().Name} 已简化为直线段");       │
+     │     }                                          │
+     │                                                │
+     │     return new JZLine(                         │
+     │         start.X * 304.8, start.Y * 304.8,      │
+     │ start.Z * 304.8,                               │
+     │         end.X * 304.8, end.Y * 304.8, end.Z *  │
+     │ 304.8                                          │
+     │     );                                         │
+     │ }                                              │
+     │                                                │
+     │ /// <summary>                                  │
+     │ /// CurveLoop转JZLine列表（处理非线性边）      │
+     │ /// </summary>                                 │
+     │ public static List<JZLine>                     │
+     │ FromCurveLoop(CurveLoop curveLoop, FieldContext│
+     │  context = null)                               │
+     │ {                                              │
+     │     var lines = new List<JZLine>();            │
+     │     bool hasNonLinearCurve = false;            │
+     │                                                │
+     │     foreach (Curve curve in curveLoop)         │
+     │     {                                          │
+     │         if (!(curve is Line))                  │
+     │         {                                      │
+     │             hasNonLinearCurve = true;          │
+     │         }                                      │
+     │                                                │
+     │         var start = curve.GetEndPoint(0);      │
+     │         var end = curve.GetEndPoint(1);        │
+     │         lines.Add(new JZLine(                  │
+     │             start.X * 304.8, start.Y * 304.8,  │
+     │ start.Z * 304.8,                               │
+     │             end.X * 304.8, end.Y * 304.8, end.Z│
+     │  * 304.8                                       │
+     │         ));                                    │
+     │     }                                          │
+     │                                                │
+     │     if (hasNonLinearCurve)                     │
+     │     {                                          │
+     │         context?.AddWarning("轮廓包含非直线边（│
+     │ 如圆弧），已简化为直线段");                    │
+     │     }                                          │
+     │                                                │
+     │     return lines;                              │
+     │ }                                              │
+     │                                                │
+     │ 3. ProfileFieldBuilder 完善（处理非线性边）    │
+     │                                                │
+     │ 文件：Features/ElementFilter/FieldBuilders/Geom│
+     │ etry/ProfileFieldBuilder.cs                    │
+     │ public class ProfileFieldBuilder :             │
+     │ IFieldBuilder                                  │
+     │ {                                              │
+     │     public string FieldName =>                 │
+     │ "geometry.profile";                            │
+     │                                                │
+     │     public void Build(FieldContext context)    │
+     │     {                                          │
+     │         try                                    │
+     │         {                                      │
+     │             // 使用扩展方法获取轮廓            │
+     │             var profiles =                     │
+     │ context.Element.GetElementProfile();           │
+     │                                                │
+     │             if                                 │
+     │ (!context.Result.ContainsKey("geometry"))      │
+     │                 context.Result["geometry"] =   │
+     │ new Dictionary<string, object>();              │
+     │                                                │
+     │             var geoDict =                      │
+     │ context.Result["geometry"] as                  │
+     │ Dictionary<string, object>;                    │
+     │                                                │
+     │             if (profiles != null &&            │
+     │ profiles.Count > 0)                            │
+     │             {                                  │
+     │                 // 直接输出List<JZFace>        │
+     │                 geoDict["profile"] = profiles; │
+     │                                                │
+     │                 // 检查是否有非线性边的警告    │
+     │                 foreach (var face in profiles) │
+     │                 {                              │
+     │                     if (face == null)          │
+     │                     {                          │
+     │                         context.AddWarning("部 │
+     │ 分轮廓包含不支持的曲线类型（如圆弧），已跳过");│
+     │                         break;                 │
+     │                     }                          │
+     │                 }                              │
+     │             }                                  │
+     │             else                               │
+     │             {                                  │
+     │                                                │
+     │ context.AddWarning("未找到可用轮廓");          │
+     │             }                                  │
+     │         }                                      │
+     │         catch (Exception ex)                   │
+     │         {                                      │
+     │             context.AddWarning($"轮廓获取失败: │
+     │ {ex.Message}");                                │
+     │         }                                      │
+     │     }                                          │
+     │ }                                              │
+     │                                                │
+     │ 4. 更新LocationFieldBuilder                    │
+     │                                                │
+     │ 文件：Features/ElementFilter/FieldBuilders/Geom│
+     │ etry/LocationFieldBuilder.cs                   │
+     │ public class LocationFieldBuilder :            │
+     │ IFieldBuilder                                  │
+     │ {                                              │
+     │     public string FieldName =>                 │
+     │ "geometry.location";                           │
+     │                                                │
+     │     public void Build(FieldContext context)    │
+     │     {                                          │
+     │         try                                    │
+     │         {                                      │
+     │             var locationInfo = GeometryUtils.Fr│
+     │ omLocation(context.Element.Location, context); │
+     │                                                │
+     │             if (locationInfo == null) return;  │
+     │                                                │
+     │             // 确保geometry节点存在            │
+     │             if                                 │
+     │ (!context.Result.ContainsKey("geometry"))      │
+     │                 context.Result["geometry"] =   │
+     │ new Dictionary<string, object>();              │
+     │                                                │
+     │             var geoDict =                      │
+     │ context.Result["geometry"] as                  │
+     │ Dictionary<string, object>;                    │
+     │                                                │
+     │             //                                 │
+     │ LocationInfo会自动序列化为正确的结构           │
+     │             geoDict["location"] = locationInfo;│
+     │         }                                      │
+     │         catch (Exception ex)                   │
+     │         {                                      │
+     │                                                │
+     │ context.AddWarning($"获取位置信息失败:         │
+     │ {ex.Message}");                                │
+     │         }                                      │
+     │     }                                          │
+     │ }                                              │
+     │                                                │
+     │ 5. 测试验证（确保无旧字段残留）                │
+     │                                                │
+     │ [Test]                                         │
+     │ public void TestNoOldFields()                  │
+     │ {                                              │
+     │     // 测试响应中不包含旧字段                  │
+     │     var result = filter.Execute(new {          │
+     │         fields = new[] { "geometry.location" } │
+     │     });                                        │
+     │                                                │
+     │     // 断言：不存在旧字段                      │
+     │     Assert.IsFalse(result.ContainsKey("location│
+     │ Point"));                                      │
+     │     Assert.IsFalse(result.ContainsKey("location│
+     │ Curve"));                                      │
+     │     Assert.IsFalse(result.ContainsKey("x"));   │
+     │     Assert.IsFalse(result.ContainsKey("y"));   │
+     │     Assert.IsFalse(result.ContainsKey("z"));   │
+     │                                                │
+     │     // 断言：新结构正确                        │
+     │                                                │
+     │ Assert.IsTrue(result.ContainsKey("geometry")); │
+     │     var geo = result["geometry"] as            │
+     │ Dictionary<string, object>;                    │
+     │     Assert.IsTrue(geo.ContainsKey("location"));│
+     │                                                │
+     │     var location = geo["location"] as          │
+     │ LocationInfo;                                  │
+     │     Assert.IsTrue(location.Point != null ||    │
+     │ location.Line != null);                        │
+     │ }                                              │
+     │                                                │
+     │ [Test]                                         │
+     │ public void TestGeometryStructure()            │
+     │ {                                              │
+     │     var result = filter.Execute(new {          │
+     │         fields = new[] {                       │
+     │             "geometry.location",               │
+     │             "geometry.boundingBox",            │
+     │             "geometry.profile"                 │
+     │         }                                      │
+     │     });                                        │
+     │                                                │
+     │     // 验证层级结构                            │
+     │                                                │
+     │ Assert.IsTrue(result.ContainsKey("geometry")); │
+     │     var geo = result["geometry"] as            │
+     │ Dictionary<string, object>;                    │
+     │                                                │
+     │     // 验证子节点                              │
+     │     if (geo.ContainsKey("location"))           │
+     │     {                                          │
+     │         var loc = geo["location"] as           │
+     │ LocationInfo;                                  │
+     │         Assert.IsNotNull(loc);                 │
+     │     }                                          │
+     │                                                │
+     │     if (geo.ContainsKey("boundingBox"))        │
+     │     {                                          │
+     │         var bbox = geo["boundingBox"] as       │
+     │ BoundingBoxInfo;                               │
+     │         Assert.IsNotNull(bbox.Min);            │
+     │         Assert.IsNotNull(bbox.Max);            │
+     │     }                                          │
+     │                                                │
+     │     if (geo.ContainsKey("profile"))            │
+     │     {                                          │
+     │         var profile = geo["profile"] as        │
+     │ List<JZFace>;                                  │
+     │         Assert.IsNotNull(profile);             │
+     │     }                                          │
+     │ }                                              │
+     │                                                │
+     │ 6. 文档更新示例                                │
+     │                                                │
+     │ README.md                                      │
+     │ ## 几何字段使用指南                            │
+     │                                                │
+     │ ### 字段结构                                   │
+     │ 所有几何信息统一在 `geometry`                  │
+     │ 节点下，可按需选择子项：                       │
+     │                                                │
+     │ - `geometry.location` - 元素定位信息           │
+     │ - `geometry.boundingBox` - 包围盒              │
+     │ - `geometry.profile` -                         │
+     │ 平面轮廓（仅楼板、天花板、屋顶）               │
+     │                                                │
+     │ ### 请求示例                                   │
+     │ ```json                                        │
+     │ {                                              │
+     │   "data": {                                    │
+     │     "filterCategory": "OST_Walls",             │
+     │     "fields": ["geometry.location",            │
+     │ "geometry.boundingBox"]                        │
+     │   }                                            │
+     │ }                                              │
+     │                                                │
+     │ 响应示例                                       │
+     │                                                │
+     │ 点定位元素（门、窗、家具等）                   │
+     │                                                │
+     │ {                                              │
+     │   "elementId": 12345,                          │
+     │   "geometry": {                                │
+     │     "location": {                              │
+     │       "point": {"x": 1337.76, "y": 1745.47,    │
+     │ "z": 0}                                        │
+     │     }                                          │
+     │   }                                            │
+     │ }                                              │
+     │                                                │
+     │ 线定位元素（墙、梁等）                         │
+     │                                                │
+     │ {                                              │
+     │   "elementId": 67890,                          │
+     │   "geometry": {                                │
+     │     "location": {                              │
+     │       "line": {                                │
+     │         "p0": {"x": -3512.24, "y": 1745.47,    │
+     │ "z": 0},                                       │
+     │         "p1": {"x": 6187.76, "y": 1745.47, "z":│
+     │  0}                                            │
+     │       }                                        │
+     │     }                                          │
+     │   }                                            │
+     │ }                                              │
+     │                                                │
+     │ 楼板轮廓                                       │
+     │                                                │
+     │ {                                              │
+     │   "elementId": 11111,                          │
+     │   "geometry": {                                │
+     │     "profile": [                               │
+     │       {                                        │
+     │         "outerLoop": [                         │
+     │           {"p0": {...}, "p1": {...}},          │
+     │           {"p0": {...}, "p1": {...}}           │
+     │         ],                                     │
+     │         "innerLoops": []                       │
+     │       }                                        │
+     │     ]                                          │
+     │   }                                            │
+     │ }                                              │
+     │                                                │
+     │ 限制说明                                       │
+     │                                                │
+     │ - 非直线定位曲线会被简化为直线段，并在warnings │
+     │ 中提示                                         │
+     │ - 轮廓中的圆弧边会被简化为直线段，并在warnings │
+     │ 中提示                                         │
+     │ - 所有坐标单位为毫米（mm）                     │
+     │                                                │
+     │ ## 三、实施优先级                              │
+     │                                                │
+     │ 1.                                             │
+     │ **第一步**：扩展GeometryUtils，集中所有转换逻辑│
+     │ 2. **第二步**：创建新的字段构建器（Location、Pr│
+     │ ofile、更新BoundingBox）                       │
+     │ 3. **第三步**：更新ElementFieldRegistry，删除旧│
+     │ 字段注册                                       │
+     │ 4. **第四步**：删除旧字段构建器文件            │
+     │ 5. **第五步**：更新测试和文档                  │
+     │                                                │
+     │ 这个最终版方案已完全按照专家建议调整，确保序列 │
+     │ 化结构明确、异常处理完善、文档示例准确。       │
+     │                                                │
+     │                                                │
+     │                                                │
+     │                                                │
+     │                                                │
+     │                                                │
+     ╰────────────────────────────────────────────────╯
+
