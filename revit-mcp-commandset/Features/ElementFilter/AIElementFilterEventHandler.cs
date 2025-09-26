@@ -496,10 +496,7 @@ namespace RevitMCPCommandSet.Features.ElementFilter
             if (element == null) return null;
 
             // 应用向后兼容层：将旧格式映射为新格式
-            if (settings != null)
-            {
-                settings.NormalizeSettings();
-            }
+            // 不再需要标准化设置
 
             // 使用新的 ElementFieldRegistry 构建字段信息
             var elementInfo = ElementFieldRegistry.BuildElementInfo(doc, element, settings);

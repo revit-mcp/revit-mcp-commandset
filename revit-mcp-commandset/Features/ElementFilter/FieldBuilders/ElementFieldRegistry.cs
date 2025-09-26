@@ -185,7 +185,7 @@ namespace RevitMCPCommandSet.Features.ElementFilter.FieldBuilders
         {
             try
             {
-                // 所有字段统一使用 Builder 处理
+                // 使用注册的 Builder 处理字段
                 if (_fieldBuilders.TryGetValue(field, out var builder))
                 {
                     if (builder.CanBuild(context.Element))
@@ -193,11 +193,7 @@ namespace RevitMCPCommandSet.Features.ElementFilter.FieldBuilders
                         builder.Build(context);
                     }
                 }
-                else
-                {
-                    // 向后兼容：处理旧的简单字段名
-                    HandleLegacyField(field, context);
-                }
+                // 不支持的字段直接忽略
             }
             catch (Exception ex)
             {
@@ -252,12 +248,7 @@ namespace RevitMCPCommandSet.Features.ElementFilter.FieldBuilders
         public static bool IsFieldRegistered(string fieldName)
         {
             if (string.IsNullOrEmpty(fieldName)) return false;
-
-            var lowerField = fieldName.ToLower();
-            return lowerField == "name" ||
-                   lowerField == "category" ||
-                   lowerField == "builtincategory" ||
-                   _fieldBuilders.ContainsKey(fieldName);
+            return _fieldBuilders.ContainsKey(fieldName);
         }
 
         /// <summary>
@@ -270,60 +261,5 @@ namespace RevitMCPCommandSet.Features.ElementFilter.FieldBuilders
             return !string.IsNullOrEmpty(presetName) && _fieldPresets.ContainsKey(presetName);
         }
 
-        /// <summary>
-        /// 处理旧版字段名（向后兼容）
-        /// </summary>
-        /// <param name="field">字段名</param>
-        /// <param name="context">字段上下文</param>
-        private static void HandleLegacyField(string field, FieldContext context)
-        {
-            try
-            {
-                switch (field?.ToLower())
-                {
-                    case "name":
-                    case "category":
-                    case "builtincategory":
-                        // 旧的单独字段请求，映射到 identity 节点
-                        var identityBuilder = new IdentityFieldBuilder();
-                        if (identityBuilder.CanBuild(context.Element))
-                        {
-                            identityBuilder.Build(context);
-                        }
-                        break;
-                    case "core.typeinfo":
-                        // 旧的 core.typeInfo 映射到新的 type
-                        var typeBuilder = new TypeInfoFieldBuilder();
-                        if (typeBuilder.CanBuild(context.Element))
-                        {
-                            typeBuilder.Build(context);
-                        }
-                        break;
-                    case "core.familyinfo":
-                        // 旧的 core.familyInfo 映射到新的 family
-                        var familyBuilder = new FamilyInfoFieldBuilder();
-                        if (familyBuilder.CanBuild(context.Element))
-                        {
-                            familyBuilder.Build(context);
-                        }
-                        break;
-                    case "core.levelinfo":
-                        // 旧的 core.levelInfo 映射到新的 level
-                        var levelBuilder = new LevelInfoFieldBuilder();
-                        if (levelBuilder.CanBuild(context.Element))
-                        {
-                            levelBuilder.Build(context);
-                        }
-                        break;
-                    default:
-                        // 未知字段，忽略
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Trace.WriteLine($"旧版字段处理失败 [{field}]: {ex.Message}");
-            }
-        }
     }
 }
