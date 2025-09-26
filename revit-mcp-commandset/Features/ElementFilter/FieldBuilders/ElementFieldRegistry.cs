@@ -34,6 +34,7 @@ namespace RevitMCPCommandSet.Features.ElementFilter.FieldBuilders
         private static void RegisterFieldBuilders()
         {
             // Core 字段构建器
+            RegisterBuilder(new IdentityFieldBuilder());    // 新增：身份信息构建器
             RegisterBuilder(new TypeInfoFieldBuilder());
             RegisterBuilder(new FamilyInfoFieldBuilder());
             RegisterBuilder(new LevelInfoFieldBuilder());
@@ -53,14 +54,14 @@ namespace RevitMCPCommandSet.Features.ElementFilter.FieldBuilders
         /// </summary>
         private static void RegisterFieldPresets()
         {
-            // 基础预设
-            _fieldPresets["core.identityLite"] = new List<string> { "name", "category", "builtInCategory" };
-            _fieldPresets["listDisplay"] = new List<string> { "name", "category", "builtInCategory" };
-            _fieldPresets["typeAnalysis"] = new List<string> { "name", "category", "builtInCategory", "core.typeInfo" };
-            _fieldPresets["spatialAnalysis"] = new List<string> { "name", "category", "builtInCategory", "geometry.location", "geometry.boundingBox" };
-            _fieldPresets["detailView"] = new List<string> { "name", "category", "builtInCategory", "core.typeInfo", "core.levelInfo" };
-            _fieldPresets["familyAnalysis"] = new List<string> { "name", "category", "builtInCategory", "core.typeInfo", "core.familyInfo" };
-            _fieldPresets["floorAnalysis"] = new List<string> { "name", "category", "geometry.profile", "geometry.boundingBox" };
+            // 基础预设（使用新的节点结构）
+            _fieldPresets["core.identityLite"] = new List<string> { "identity" };
+            _fieldPresets["listDisplay"] = new List<string> { "identity" };
+            _fieldPresets["typeAnalysis"] = new List<string> { "identity", "type" };
+            _fieldPresets["spatialAnalysis"] = new List<string> { "identity", "geometry.location", "geometry.boundingBox" };
+            _fieldPresets["detailView"] = new List<string> { "identity", "type", "level" };
+            _fieldPresets["familyAnalysis"] = new List<string> { "identity", "type", "family" };
+            _fieldPresets["floorAnalysis"] = new List<string> { "identity", "geometry.profile", "geometry.boundingBox" };
         }
 
         /// <summary>
@@ -184,30 +185,18 @@ namespace RevitMCPCommandSet.Features.ElementFilter.FieldBuilders
         {
             try
             {
-                // 简单字段直接处理（性能优化）
-                switch (field?.ToLower())
+                // 所有字段统一使用 Builder 处理
+                if (_fieldBuilders.TryGetValue(field, out var builder))
                 {
-                    case "name":
-                        context.Result["name"] = context.Element.Name;
-                        break;
-                    case "category":
-                        context.Result["category"] = context.Element.Category?.Name ?? "Unknown";
-                        break;
-                    case "builtincategory":
-                        context.Result["builtInCategory"] = context.Element.Category != null
-                            ? ((BuiltInCategory)context.Element.Category.Id.IntegerValue).ToString()
-                            : null;
-                        break;
-                    default:
-                        // 复杂字段使用 Builder
-                        if (_fieldBuilders.TryGetValue(field, out var builder))
-                        {
-                            if (builder.CanBuild(context.Element))
-                            {
-                                builder.Build(context);
-                            }
-                        }
-                        break;
+                    if (builder.CanBuild(context.Element))
+                    {
+                        builder.Build(context);
+                    }
+                }
+                else
+                {
+                    // 向后兼容：处理旧的简单字段名
+                    HandleLegacyField(field, context);
                 }
             }
             catch (Exception ex)
@@ -279,6 +268,62 @@ namespace RevitMCPCommandSet.Features.ElementFilter.FieldBuilders
         public static bool IsPresetRegistered(string presetName)
         {
             return !string.IsNullOrEmpty(presetName) && _fieldPresets.ContainsKey(presetName);
+        }
+
+        /// <summary>
+        /// 处理旧版字段名（向后兼容）
+        /// </summary>
+        /// <param name="field">字段名</param>
+        /// <param name="context">字段上下文</param>
+        private static void HandleLegacyField(string field, FieldContext context)
+        {
+            try
+            {
+                switch (field?.ToLower())
+                {
+                    case "name":
+                    case "category":
+                    case "builtincategory":
+                        // 旧的单独字段请求，映射到 identity 节点
+                        var identityBuilder = new IdentityFieldBuilder();
+                        if (identityBuilder.CanBuild(context.Element))
+                        {
+                            identityBuilder.Build(context);
+                        }
+                        break;
+                    case "core.typeinfo":
+                        // 旧的 core.typeInfo 映射到新的 type
+                        var typeBuilder = new TypeInfoFieldBuilder();
+                        if (typeBuilder.CanBuild(context.Element))
+                        {
+                            typeBuilder.Build(context);
+                        }
+                        break;
+                    case "core.familyinfo":
+                        // 旧的 core.familyInfo 映射到新的 family
+                        var familyBuilder = new FamilyInfoFieldBuilder();
+                        if (familyBuilder.CanBuild(context.Element))
+                        {
+                            familyBuilder.Build(context);
+                        }
+                        break;
+                    case "core.levelinfo":
+                        // 旧的 core.levelInfo 映射到新的 level
+                        var levelBuilder = new LevelInfoFieldBuilder();
+                        if (levelBuilder.CanBuild(context.Element))
+                        {
+                            levelBuilder.Build(context);
+                        }
+                        break;
+                    default:
+                        // 未知字段，忽略
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"旧版字段处理失败 [{field}]: {ex.Message}");
+            }
         }
     }
 }

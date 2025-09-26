@@ -209,6 +209,47 @@ namespace RevitMCPCommandSet.Features.ElementFilter.FieldBuilders
         }
 
         /// <summary>
+        /// 获取或创建节点
+        /// </summary>
+        /// <param name="nodeName">节点名称</param>
+        /// <returns>节点字典</returns>
+        public Dictionary<string, object> GetOrCreateNode(string nodeName)
+        {
+            if (!Result.ContainsKey(nodeName))
+            {
+                Result[nodeName] = new Dictionary<string, object>();
+            }
+            return Result[nodeName] as Dictionary<string, object>;
+        }
+
+        /// <summary>
+        /// 设置节点内的值
+        /// </summary>
+        /// <param name="nodeName">节点名称</param>
+        /// <param name="key">字段键</param>
+        /// <param name="value">字段值</param>
+        public void SetNodeValue(string nodeName, string key, object value)
+        {
+            var node = GetOrCreateNode(nodeName);
+            node[key] = value;
+        }
+
+        /// <summary>
+        /// 获取或创建子节点（用于嵌套结构）
+        /// </summary>
+        /// <param name="parentNode">父节点</param>
+        /// <param name="subNodeName">子节点名称</param>
+        /// <returns>子节点字典</returns>
+        public Dictionary<string, object> GetOrCreateSubNode(Dictionary<string, object> parentNode, string subNodeName)
+        {
+            if (!parentNode.ContainsKey(subNodeName))
+            {
+                parentNode[subNodeName] = new Dictionary<string, object>();
+            }
+            return parentNode[subNodeName] as Dictionary<string, object>;
+        }
+
+        /// <summary>
         /// 清理缓存（通常在处理完一个元素后调用）
         /// </summary>
         public void ClearCache()

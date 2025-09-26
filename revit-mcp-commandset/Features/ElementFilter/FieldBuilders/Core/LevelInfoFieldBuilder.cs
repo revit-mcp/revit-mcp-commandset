@@ -5,11 +5,11 @@ namespace RevitMCPCommandSet.Features.ElementFilter.FieldBuilders.Core
 {
     /// <summary>
     /// 标高信息字段构建器
-    /// 构建 core.levelInfo 字段：levelId, levelName
+    /// 构建 level 字段：levelId, levelName
     /// </summary>
     public class LevelInfoFieldBuilder : IFieldBuilder
     {
-        public string FieldName => "core.levelInfo";
+        public string FieldName => "level";
 
         public bool CanBuild(Element element)
         {
@@ -24,14 +24,14 @@ namespace RevitMCPCommandSet.Features.ElementFilter.FieldBuilders.Core
 
             if (level != null)
             {
-                context.Result["levelId"] = level.Id.IntegerValue;
-                context.Result["levelName"] = level.Name;
+                context.SetNodeValue("level", "levelId", level.Id.IntegerValue);
+                context.SetNodeValue("level", "levelName", level.Name);
             }
             else
             {
                 // 没有关联标高的元素
-                context.Result["levelId"] = -1;
-                context.Result["levelName"] = null;
+                context.SetNodeValue("level", "levelId", -1);
+                context.SetNodeValue("level", "levelName", null);
             }
         }
     }

@@ -24,8 +24,8 @@ namespace RevitMCPCommandSet.Features.ElementFilter.FieldBuilders.Core
             if (typeId == ElementId.InvalidElementId)
             {
                 // 对于没有类型的元素（如Project Info等），返回空值
-                context.Result["typeId"] = -1;
-                context.Result["typeName"] = null;
+                context.SetNodeValue("type", "typeId", -1);
+                context.SetNodeValue("type", "typeName", null);
                 return;
             }
 
@@ -34,14 +34,14 @@ namespace RevitMCPCommandSet.Features.ElementFilter.FieldBuilders.Core
 
             if (typeElement != null)
             {
-                context.Result["typeId"] = typeId.IntegerValue;
-                context.Result["typeName"] = typeElement.Name;
+                context.SetNodeValue("type", "typeId", typeId.IntegerValue);
+                context.SetNodeValue("type", "typeName", typeElement.Name);
             }
             else
             {
                 // 类型元素不存在的情况
-                context.Result["typeId"] = typeId.IntegerValue;
-                context.Result["typeName"] = null;
+                context.SetNodeValue("type", "typeId", typeId.IntegerValue);
+                context.SetNodeValue("type", "typeName", null);
             }
         }
     }

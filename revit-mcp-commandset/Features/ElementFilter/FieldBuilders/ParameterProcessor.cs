@@ -65,21 +65,42 @@ namespace RevitMCPCommandSet.Features.ElementFilter.FieldBuilders
                     }
                 }
 
-                // 将结果添加到上下文
+                // 将结果添加到上下文 - 始终使用 parameters 节点
                 if (parameters.Count > 0)
                 {
-                    if (request.Flatten)
+                    // 获取或创建 parameters 节点
+                    var parametersNode = context.GetOrCreateNode("parameters");
+
+                    // 根据参数包含范围创建子节点
+                    if (request.IncludeInstance && request.IncludeType)
                     {
-                        // 扁平化模式：参数直接添加到根级
-                        foreach (var kvp in parameters)
-                        {
-                            context.Result[kvp.Key] = kvp.Value;
-                        }
+                        // 分别处理实例和类型参数
+                        var instanceParams = new Dictionary<string, object>();
+                        var typeParams = new Dictionary<string, object>();
+
+                        // 重新获取分类的参数
+                        GetCategorizedParameters(context.Element, context.TypeElement, request, instanceParams, typeParams);
+
+                        if (instanceParams.Count > 0)
+                            parametersNode["instance"] = instanceParams;
+                        if (typeParams.Count > 0)
+                            parametersNode["type"] = typeParams;
+                    }
+                    else if (request.IncludeInstance)
+                    {
+                        parametersNode["instance"] = parameters;
+                    }
+                    else if (request.IncludeType)
+                    {
+                        parametersNode["type"] = parameters;
                     }
                     else
                     {
-                        // 分层模式：参数放在 parameters 节点下
-                        context.Result["parameters"] = parameters;
+                        // 直接放入 parameters 节点
+                        foreach (var kvp in parameters)
+                        {
+                            parametersNode[kvp.Key] = kvp.Value;
+                        }
                     }
                 }
             }
@@ -323,6 +344,96 @@ namespace RevitMCPCommandSet.Features.ElementFilter.FieldBuilders
                 // 回退到名称匹配
                 var paramName = param.Definition.Name.ToLower();
                 return paramName.Contains("area");
+            }
+        }
+
+        /// <summary>
+        /// 获取分类的参数（实例参数和类型参数分别处理）
+        /// </summary>
+        private void GetCategorizedParameters(Element element, Element typeElement, ParameterRequest request,
+            Dictionary<string, object> instanceParams, Dictionary<string, object> typeParams)
+        {
+            try
+            {
+                // 处理实例参数
+                if (request.IncludeInstance)
+                {
+                    foreach (Parameter param in element.Parameters)
+                    {
+                        var value = GetParameterValue(param);
+                        if (value != null)
+                        {
+                            var displayValue = request.Flatten ? value : CreateParameterDetailValue(param, value);
+                            instanceParams[param.Definition.Name] = displayValue;
+                        }
+                    }
+                }
+
+                // 处理类型参数
+                if (request.IncludeType && typeElement != null)
+                {
+                    foreach (Parameter param in typeElement.Parameters)
+                    {
+                        var value = GetParameterValue(param);
+                        if (value != null)
+                        {
+                            var displayValue = request.Flatten ? value : CreateParameterDetailValue(param, value);
+                            typeParams[param.Definition.Name] = displayValue;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // 静默失败
+            }
+        }
+
+        /// <summary>
+        /// 创建参数详细值对象（flatten=false时使用）
+        /// </summary>
+        private object CreateParameterDetailValue(Parameter param, object value)
+        {
+            try
+            {
+                return new
+                {
+                    value = value,
+                    raw = GetParameterRawValue(param),
+                    storageType = param.StorageType.ToString(),
+                    isReadOnly = param.IsReadOnly
+                };
+            }
+            catch
+            {
+                return value;
+            }
+        }
+
+        /// <summary>
+        /// 获取参数原始值（用于详细模式）
+        /// </summary>
+        private object GetParameterRawValue(Parameter param)
+        {
+            try
+            {
+                switch (param.StorageType)
+                {
+                    case StorageType.Double:
+                        return param.AsDouble();
+                    case StorageType.Integer:
+                        return param.AsInteger();
+                    case StorageType.String:
+                        return param.AsString();
+                    case StorageType.ElementId:
+                        return param.AsElementId().IntegerValue;
+                    default:
+                        return null;
+                }
+            }
+            catch
+            {
+                return null;
             }
         }
     }
