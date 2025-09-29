@@ -106,6 +106,10 @@ namespace RevitMCPCommandSet.Features.ElementTransform
                             ExecuteMove(elementIds, setting, successfulElements, failedElements, details);
                             break;
 
+                        case "Copy":
+                            ExecuteCopy(elementIds, setting, successfulElements, failedElements, details);
+                            break;
+
                         default:
                             throw new Exception($"未支持的操作类型：{setting.TransformAction}");
                     }
@@ -150,6 +154,38 @@ namespace RevitMCPCommandSet.Features.ElementTransform
         }
 
         /// <summary>
+        /// 获取元素的位置坐标（复用自验证命令）
+        /// </summary>
+        private XYZ GetElementLocation(Element element)
+        {
+            Location location = element.Location;
+
+            if (location is LocationPoint)
+            {
+                LocationPoint locPoint = location as LocationPoint;
+                return locPoint.Point;
+            }
+            else if (location is LocationCurve)
+            {
+                LocationCurve locCurve = location as LocationCurve;
+                Curve curve = locCurve.Curve;
+                // 使用线的中点作为中心
+                return curve.Evaluate(0.5, true);
+            }
+            else
+            {
+                // 尝试使用包围盒中心
+                BoundingBoxXYZ bbox = element.get_BoundingBox(null);
+                if (bbox != null)
+                {
+                    return (bbox.Min + bbox.Max) * 0.5;
+                }
+            }
+
+            return XYZ.Zero;
+        }
+
+        /// <summary>
         /// 执行旋转操作
         /// </summary>
         private void ExecuteRotate(
@@ -159,9 +195,6 @@ namespace RevitMCPCommandSet.Features.ElementTransform
             List<FailureInfo> failedElements,
             Dictionary<string, object> details)
         {
-            // 构建旋转轴
-            Line axis = JZLine.ToLine(setting.RotateAxis);
-
             // 角度转弧度
             double angleRad = setting.RotateAngle * Math.PI / 180.0;
 
@@ -169,6 +202,35 @@ namespace RevitMCPCommandSet.Features.ElementTransform
             {
                 try
                 {
+                    Element elem = doc.GetElement(elemId);
+
+                    // 检查元素是否被锁定
+                    if (elem.Pinned)
+                    {
+                        failedElements.Add(new FailureInfo
+                        {
+                            ElementId = elemId.IntegerValue,
+                            Reason = "元素已被锁定"
+                        });
+                        continue;
+                    }
+
+                    // 构建旋转轴（复用ValidateRotateCommand逻辑）
+                    Line axis;
+                    if (setting.RotateAxis != null)
+                    {
+                        // 使用提供的旋转轴
+                        axis = JZLine.ToLine(setting.RotateAxis);
+                    }
+                    else
+                    {
+                        // 智能获取元素位置作为旋转轴起点，Z轴向上
+                        XYZ rotationOrigin = GetElementLocation(elem);
+                        axis = Line.CreateBound(
+                            rotationOrigin,
+                            new XYZ(rotationOrigin.X, rotationOrigin.Y, rotationOrigin.Z + 10));
+                    }
+
                     ElementTransformUtils.RotateElement(doc, elemId, axis, angleRad);
                     successfulElements.Add(elemId.IntegerValue);
                 }
@@ -183,10 +245,17 @@ namespace RevitMCPCommandSet.Features.ElementTransform
             }
 
             details["rotateAngle"] = setting.RotateAngle;
-            details["rotateAxis"] = new {
-                p0 = setting.RotateAxis.P0,
-                p1 = setting.RotateAxis.P1
-            };
+            if (setting.RotateAxis != null)
+            {
+                details["rotateAxis"] = new {
+                    p0 = setting.RotateAxis.P0,
+                    p1 = setting.RotateAxis.P1
+                };
+            }
+            else
+            {
+                details["rotateAxis"] = "智能获取元素位置作为Z轴旋转";
+            }
         }
 
         /// <summary>
@@ -199,12 +268,43 @@ namespace RevitMCPCommandSet.Features.ElementTransform
             List<FailureInfo> failedElements,
             Dictionary<string, object> details)
         {
-            Plane plane = setting.MirrorPlane.ToRevitPlane();
-
             foreach (var elemId in elementIds)
             {
                 try
                 {
+                    Element elem = doc.GetElement(elemId);
+
+                    // 检查元素是否被锁定
+                    if (elem.Pinned)
+                    {
+                        failedElements.Add(new FailureInfo
+                        {
+                            ElementId = elemId.IntegerValue,
+                            Reason = "元素已被锁定"
+                        });
+                        continue;
+                    }
+
+                    // 构建镜像平面（复用ValidateMirrorCommand逻辑）
+                    Plane plane;
+                    if (setting.MirrorPlane != null && setting.MirrorPlane.Origin != null)
+                    {
+                        // 使用提供的镜像平面
+                        plane = setting.MirrorPlane.ToRevitPlane();
+                    }
+                    else
+                    {
+                        // 智能获取元素位置作为镜像平面原点
+                        XYZ mirrorOrigin = GetElementLocation(elem);
+                        XYZ normal = setting.MirrorPlane?.Normal != null ?
+                            new XYZ(setting.MirrorPlane.Normal.X,
+                                    setting.MirrorPlane.Normal.Y,
+                                    setting.MirrorPlane.Normal.Z) :
+                            XYZ.BasisX; // 默认YZ平面（X轴法向量）
+
+                        plane = Plane.CreateByNormalAndOrigin(normal, mirrorOrigin);
+                    }
+
                     ElementTransformUtils.MirrorElement(doc, elemId, plane);
                     successfulElements.Add(elemId.IntegerValue);
                 }
@@ -218,11 +318,18 @@ namespace RevitMCPCommandSet.Features.ElementTransform
                 }
             }
 
-            details["mirrorPlane"] = new
+            if (setting.MirrorPlane != null && setting.MirrorPlane.Origin != null)
             {
-                origin = setting.MirrorPlane.Origin,
-                normal = setting.MirrorPlane.Normal
-            };
+                details["mirrorPlane"] = new
+                {
+                    origin = setting.MirrorPlane.Origin,
+                    normal = setting.MirrorPlane.Normal
+                };
+            }
+            else
+            {
+                details["mirrorPlane"] = "智能获取元素位置作为镜像平面原点";
+            }
         }
 
         /// <summary>
@@ -348,6 +455,57 @@ namespace RevitMCPCommandSet.Features.ElementTransform
                 ["successCount"] = successfulElements.Count,
                 ["failureCount"] = failedElements.Count
             };
+        }
+
+        /// <summary>
+        /// 执行复制操作（复用自ValidateCopyCommand）
+        /// </summary>
+        private void ExecuteCopy(
+            ICollection<ElementId> elementIds,
+            TransformOperationSetting setting,
+            List<int> successfulElements,
+            List<FailureInfo> failedElements,
+            Dictionary<string, object> details)
+        {
+            // 构建移动向量（毫米转英尺）
+            XYZ translation = new XYZ(
+                setting.MoveVector.X / 304.8,
+                setting.MoveVector.Y / 304.8,
+                setting.MoveVector.Z / 304.8
+            );
+
+            var copiedElements = new List<int>();
+
+            foreach (var elemId in elementIds)
+            {
+                try
+                {
+                    // 使用ElementTransformUtils.CopyElement进行复制
+                    ICollection<ElementId> copiedIds = ElementTransformUtils.CopyElement(
+                        doc, elemId, translation);
+
+                    successfulElements.Add(elemId.IntegerValue);
+
+                    // 记录所有复制出的元素ID
+                    foreach (var copiedId in copiedIds)
+                    {
+                        copiedElements.Add(copiedId.IntegerValue);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    failedElements.Add(new FailureInfo
+                    {
+                        ElementId = elemId.IntegerValue,
+                        Reason = $"复制失败: {ex.Message}"
+                    });
+                }
+            }
+
+            // 记录复制详情
+            details["copyVector"] = setting.MoveVector;
+            details["copiedElements"] = copiedElements;
+            details["copiedCount"] = copiedElements.Count;
         }
 
     }

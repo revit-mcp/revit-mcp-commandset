@@ -17,7 +17,7 @@ namespace RevitMCPCommandSet.Features.ElementTransform.Models
         public List<int> ElementIds { get; set; }
 
         /// <summary>
-        /// 变换操作类型（枚举：Rotate, Mirror, Flip, Move）
+        /// 变换操作类型（枚举：Rotate, Mirror, Flip, Move, Copy）
         /// </summary>
         [JsonProperty("transformAction")]
         public string TransformAction { get; set; }
@@ -88,21 +88,15 @@ namespace RevitMCPCommandSet.Features.ElementTransform.Models
             switch (TransformAction)
             {
                 case "Rotate":
-                    if (RotateAxis == null)
-                    {
-                        throw new ArgumentException("Rotate 操作需要提供 rotateAxis");
-                    }
                     if (RotateAngle == 0)
                     {
                         throw new ArgumentException("Rotate 操作的 rotateAngle 不能为0");
                     }
+                    // rotateAxis 现在是可选的，如果未提供将智能获取元素位置
                     break;
 
                 case "Mirror":
-                    if (MirrorPlane == null)
-                    {
-                        throw new ArgumentException("Mirror 操作需要提供 mirrorPlane");
-                    }
+                    // mirrorPlane 现在是可选的，如果未提供将智能获取元素位置和默认法向量
                     break;
 
                 case "Flip":
@@ -125,8 +119,15 @@ namespace RevitMCPCommandSet.Features.ElementTransform.Models
                     MoveStrategy = "directTransform";
                     break;
 
+                case "Copy":
+                    if (MoveVector == null)
+                    {
+                        throw new ArgumentException("Copy 操作需要提供 moveVector");
+                    }
+                    break;
+
                 default:
-                    var validActions = new[] { "Rotate", "Mirror", "Flip", "Move" };
+                    var validActions = new[] { "Rotate", "Mirror", "Flip", "Move", "Copy" };
                     throw new ArgumentException(
                         $"不支持的操作: {TransformAction}，支持的操作: {string.Join(", ", validActions)}"
                     );
