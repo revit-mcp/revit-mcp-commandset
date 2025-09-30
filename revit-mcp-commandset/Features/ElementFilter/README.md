@@ -135,7 +135,7 @@ ElementFilter 采用**节点化数据组织**模式，将元素信息分类存�
 |--------|------|--------|------|------|
 | `filterCategory` | string | null | 否 | Revit 内置类别名称 (如"OST_Walls", "OST_Doors", "OST_GenericModel") |
 | `filterElementType` | string | null | 否 | 元素类型名称 (如"Wall", "Floor", "Autodesk.Revit.DB.Wall") |
-| `filterFamilySymbolId` | number | -1 | 否 | 族类型的ElementId，使用-1表示不过滤 |
+| `filterTypeId` | number | -1 | 否 | **统一的类型ElementId过滤**。对于族实例，匹配其FamilySymbol的ElementId；对于系统族实例（如墙、楼板），匹配其WallType、FloorType等类型的ElementId；对于类型元素本身，匹配元素自身的ElementId。使用-1表示不过滤 |
 | `filterNameKeyword` | string | null | 否 | 名称关键字过滤条件，检查元素名、类型名、族名是否包含关键字（不区分大小写） |
 | `includeTypes` | boolean | false | 否 | 是否包含元素类型 |
 | `includeInstances` | boolean | true | 否 | 是否包含元素实例 |
@@ -366,6 +366,48 @@ ElementFilter 采用**节点化数据组织**模式，将元素信息分类存�
   }
 }
 ```
+
+### 9. 类型ID过滤：查询特定类型的族实例
+
+```json
+{
+  "data": {
+    "filterTypeId": 94654,
+    "includeInstances": true,
+    "includeTypes": false,
+    "fields": ["identity", "type", "geometry.location"]
+  }
+}
+```
+**说明**: 查询所有使用 ElementId 为 94654 的类型的族实例
+
+### 10. 类型ID过滤：查询特定类型的系统族实例（如墙体）
+
+```json
+{
+  "data": {
+    "filterTypeId": 398,
+    "filterCategory": "OST_Walls",
+    "includeInstances": true,
+    "fields": ["identity", "type", "geometry.location", "geometry.thickness"]
+  }
+}
+```
+**说明**: 查询所有使用 WallType ElementId 为 398 的墙体实例
+
+### 11. 类型元素查询：直接查询类型元素本身
+
+```json
+{
+  "data": {
+    "filterTypeId": 398,
+    "includeTypes": true,
+    "includeInstances": false,
+    "fields": ["identity", "type"]
+  }
+}
+```
+**说明**: 当查询类型元素时，filterTypeId 匹配类型元素自身的 ElementId
 
 ## 名称关键字过滤详解
 

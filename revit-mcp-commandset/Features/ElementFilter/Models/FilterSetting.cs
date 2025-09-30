@@ -26,12 +26,14 @@ namespace RevitMCPCommandSet.Features.ElementFilter.Models
         [JsonProperty("filterElementType")]
         public string FilterElementType { get; set; } = null;
         /// <summary>
-        /// 获取或设置要过滤的族类型的ElementId值（FamilySymbol）。
-        /// 如果为0或负数，则不进行族过滤。
-        /// 注意：此过滤器仅适用于元素实例，不适用于类型元素。
+        /// 获取或设置要过滤的类型元素的ElementId值。
+        /// 对于族实例，匹配其 FamilySymbol 的 ElementId；
+        /// 对于系统族实例（如墙、楼板），匹配其 WallType、FloorType 等类型的 ElementId；
+        /// 对于类型元素本身，匹配元素自身的 ElementId。
+        /// 如果为0或负数，则不进行类型过滤。
         /// </summary>
-        [JsonProperty("filterFamilySymbolId")]
-        public int FilterFamilySymbolId { get; set; } = -1;
+        [JsonProperty("filterTypeId")]
+        public int FilterTypeId { get; set; } = -1;
         /// <summary>
         /// 获取或设置名称关键字过滤条件。
         /// 将检查元素名称、类型名称、族名称是否包含此关键字（不区分大小写）。
@@ -126,9 +128,9 @@ namespace RevitMCPCommandSet.Features.ElementFilter.Models
             {
                 if (string.IsNullOrWhiteSpace(FilterCategory) &&
                     string.IsNullOrWhiteSpace(FilterElementType) &&
-                    FilterFamilySymbolId <= 0)
+                    FilterTypeId <= 0)
                 {
-                    errorMessage = "过滤设置无效: 必须至少指定一个过滤条件(类别、元素类型或族类型)或提供元素ID列表";
+                    errorMessage = "过滤设置无效: 必须至少指定一个过滤条件(类别、元素类型或类型ID)或提供元素ID列表";
                     return false;
                 }
             }
@@ -137,8 +139,6 @@ namespace RevitMCPCommandSet.Features.ElementFilter.Models
             if (IncludeTypes && !IncludeInstances)
             {
                 List<string> invalidFilters = new List<string>();
-                if (FilterFamilySymbolId > 0)
-                    invalidFilters.Add("族实例过滤");
                 if (FilterVisibleInCurrentView)
                     invalidFilters.Add("视图可见性过滤");
                 if (invalidFilters.Count > 0)

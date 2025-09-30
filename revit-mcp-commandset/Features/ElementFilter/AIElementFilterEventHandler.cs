@@ -259,20 +259,12 @@ namespace RevitMCPCommandSet.Features.ElementFilter
         {
             if (element == null) return false;
 
-            // 族实例过滤
-            if (settings.FilterFamilySymbolId > 0)
+            // 类型ID过滤（统一处理族实例和系统族）
+            if (settings.FilterTypeId > 0)
             {
-                if (element is FamilyInstance familyInstance)
+                int? elementTypeId = GetElementTypeId(element);
+                if (elementTypeId == null || elementTypeId.Value != settings.FilterTypeId)
                 {
-                    ElementId typeId = familyInstance.GetTypeId();
-                    if (typeId.IntegerValue != settings.FilterFamilySymbolId)
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    // 非族实例元素不匹配族过滤器
                     return false;
                 }
             }
@@ -432,6 +424,34 @@ namespace RevitMCPCommandSet.Features.ElementFilter
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// 获取元素的类型ID
+        /// 对于类型元素本身，返回其自身ID；
+        /// 对于实例元素（族实例或系统族实例），返回其类型的ID
+        /// </summary>
+        /// <param name="element">要检查的元素</param>
+        /// <returns>类型ID，如果无法获取则返回null</returns>
+        private static int? GetElementTypeId(Element element)
+        {
+            if (element == null)
+                return null;
+
+            // 如果元素本身是类型元素（ElementType），返回自身ID
+            if (element is ElementType)
+            {
+                return element.Id.IntegerValue;
+            }
+
+            // 对于实例元素，获取其类型ID
+            ElementId typeId = element.GetTypeId();
+            if (typeId == null || typeId == ElementId.InvalidElementId)
+            {
+                return null; // 无法获取类型ID
+            }
+
+            return typeId.IntegerValue;
         }
     }
 }
