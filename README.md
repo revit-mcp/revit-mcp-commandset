@@ -1,6 +1,10 @@
 # revit-mcp-commandset
 🔄 Revit-MCP Client | Core implementation of the Revit-MCP protocol that connects LLMs with Revit. Includes essential CRUD commands for Revit elements enabling AI-driven BIM automation.
 
+## Branch: dev/cli-based
+
+This branch provides MCP commands optimized for **ai-cli tool integration**, with enhanced CLI interaction and automation capabilities.
+
 # Custom Commands Setup
 
 ## Installation
