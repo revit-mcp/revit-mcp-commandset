@@ -2,22 +2,22 @@ using System;
 using Autodesk.Revit.UI;
 using Newtonsoft.Json.Linq;
 using RevitMCPCommandSet.Models.Common;
-using RevitMCPCommandSet.Features.UnifiedCommands.Models;
+using RevitMCPCommandSet.Features.ElementCreation.Models;
 using RevitMCPSDK.API.Base;
 
-namespace RevitMCPCommandSet.Features.UnifiedCommands
+namespace RevitMCPCommandSet.Features.ElementCreation
 {
     /// <summary>
-    /// 统一元素创建命令
+    /// 统一元素创建参数建议命令
     /// </summary>
-    public class CreateElementCommand : ExternalEventCommandBase
+    public class GetElementCreationSuggestionCommand : ExternalEventCommandBase
     {
-        private CreateElementEventHandler _handler => (CreateElementEventHandler)Handler;
+        private GetElementCreationSuggestionEventHandler _handler => (GetElementCreationSuggestionEventHandler)Handler;
 
-        public override string CommandName => "create_element";
+        public override string CommandName => "get_element_creation_suggestion";
 
-        public CreateElementCommand(UIApplication uiApp)
-            : base(new CreateElementEventHandler(), uiApp)
+        public GetElementCreationSuggestionCommand(UIApplication uiApp)
+            : base(new GetElementCreationSuggestionEventHandler(), uiApp)
         {
         }
 
@@ -25,7 +25,7 @@ namespace RevitMCPCommandSet.Features.UnifiedCommands
         {
             try
             {
-                // 解析强类型参数
+                // 解析data包裹层
                 var dataToken = parameters["data"];
                 if (dataToken == null)
                 {
@@ -36,21 +36,18 @@ namespace RevitMCPCommandSet.Features.UnifiedCommands
                     };
                 }
 
-                var creationParams = dataToken.ToObject<ElementCreationParameters>();
-                if (creationParams == null)
+                var suggestionParams = dataToken.ToObject<ElementSuggestionParameters>();
+                if (suggestionParams == null)
                 {
-                    return new AIResult<object>
-                    {
-                        Success = false,
-                        Message = "参数解析失败"
-                    };
+                    // 如果无法解析为强类型，则创建默认参数（返回所有建议）
+                    suggestionParams = new ElementSuggestionParameters { ReturnAll = true };
                 }
 
                 // 设置Handler参数
-                _handler.SetParameters(creationParams);
+                _handler.SetParameters(suggestionParams);
 
-                // 执行并返回结果
-                if (RaiseAndWaitForCompletion(10000))
+                // 触发外部事件并等待完成
+                if (RaiseAndWaitForCompletion(5000))
                 {
                     return _handler.GetResult();
                 }

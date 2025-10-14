@@ -1,8 +1,8 @@
 using System;
 using Autodesk.Revit.DB;
-using RevitMCPCommandSet.Features.UnifiedCommands.Models;
+using RevitMCPCommandSet.Features.ElementCreation.Models;
 
-namespace RevitMCPCommandSet.Features.UnifiedCommands.Utils
+namespace RevitMCPCommandSet.Features.ElementCreation.Utils
 {
     /// <summary>
     /// 元素工具服务类，提供类型检测和基础验证

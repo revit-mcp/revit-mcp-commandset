@@ -71,7 +71,7 @@ revit-mcp-commandset/
 │   ├── ElementVisibility/ # 可见性控制
 │   ├── ElementTransform/  # 几何变换
 │   ├── ElementModify/     # 参数修改
-│   ├── UnifiedCommands/   # 统一创建
+│   ├── ElementCreation/   # 统一创建
 │   └── RevitStatus/       # 状态查询
 ├── Models/                 # 数据模型层
 │   ├── Common/            # 通用模型（AIResult、ElementOperationResponse）
@@ -144,8 +144,8 @@ revit-mcp-commandset/
 | `operate_element_visibility` | 可见性控制 | Hide/Isolate/Unhide | [ElementVisibility/README.md](./revit-mcp-commandset/Features/ElementVisibility/README.md) |
 | `operate_element_transform` | 几何变换 | Rotate/Mirror/Move/Copy | [ElementTransform/README.md](./revit-mcp-commandset/Features/ElementTransform/README.md) |
 | `operate_element_modify` | 参数修改与删除 | SetParameter/Delete | [ElementModify/README.md](./revit-mcp-commandset/Features/ElementModify/README.md) |
-| `create_element` | 统一元素创建 | 8种族类型+墙体/楼板 | [UnifiedCommands/README.md](./revit-mcp-commandset/Features/UnifiedCommands/README.md) |
-| `get_element_creation_suggestion` | 创建参数建议 | 分析类型并提供建议 | [UnifiedCommands/README.md](./revit-mcp-commandset/Features/UnifiedCommands/README.md) |
+| `create_element` | 统一元素创建 | 8种族类型+墙体/楼板 | [ElementCreation/README.md](./revit-mcp-commandset/Features/UnifiedCommands/README.md) |
+| `get_element_creation_suggestion` | 创建参数建议 | 分析类型并提供建议 | [ElementCreation/README.md](./revit-mcp-commandset/Features/UnifiedCommands/README.md) |
 | `get_revit_status` | Revit状态查询 | 版本/文档/视图 | [RevitStatus/README.md](./revit-mcp-commandset/Features/RevitStatus/README.md) |
 
 ## 协作流程 & 开发规范

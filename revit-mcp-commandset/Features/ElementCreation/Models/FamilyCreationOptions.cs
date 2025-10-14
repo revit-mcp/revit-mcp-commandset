@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using RevitMCPCommandSet.Models.Geometry;
 
-namespace RevitMCPCommandSet.Features.UnifiedCommands.Models
+namespace RevitMCPCommandSet.Features.ElementCreation.Models
 {
     /// <summary>
     /// 族创建特有参数

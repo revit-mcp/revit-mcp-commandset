@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace RevitMCPCommandSet.Features.UnifiedCommands.Models
+namespace RevitMCPCommandSet.Features.ElementCreation.Models
 {
     /// <summary>
     /// 元素创建参数建议查询参数
