@@ -63,17 +63,5 @@
       "description": "Analyze model complexity with element counts by category, type, family, and level",
       "assemblyPath": "RevitMCPCommandSet.dll"
     }
-,
-	{
-      "commandName": "create_grid",
-      "description": "Create grid system with smart spacing generation for project layout (alphabetic/numeric naming)",
-      "assemblyPath": "RevitMCPCommandSet.dll"
-    }
-,
-	{
-      "commandName": "create_structural_framing_system",
-      "description": "Create structural beam framing system with configurable spacing and direction",
-      "assemblyPath": "RevitMCPCommandSet.dll"
-    }
   ]
 }

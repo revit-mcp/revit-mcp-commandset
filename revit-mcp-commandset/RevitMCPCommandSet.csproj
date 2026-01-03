@@ -56,7 +56,7 @@
     </ItemGroup>
 
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-      <Exec Command="xcopy /y &quot;$(TargetDir)*.dll&quot; &quot;$(AppData)\Autodesk\Revit\Addins\2024\Commands\RevitMCPCommandSet\2024&quot;&#xD;&#xA;xcopy /y &quot;$(TargetDir)*.pdb&quot; &quot;$(AppData)\Autodesk\Revit\Addins\2024\Commands\RevitMCPCommandSet\2024&quot;" />
-    </Target>
+		<Exec Command="xcopy /y /i &quot;$(TargetDir)*.dll&quot; &quot;$(AppData)\Autodesk\Revit\Addins\$(RevitVersion)\revit_mcp_plugin\Commands\RevitMCPCommandSet\$(RevitVersion)&quot;&#xD;&#xA;xcopy /y /i &quot;$(TargetDir)*.pdb&quot; &quot;$(AppData)\Autodesk\Revit\Addins\$(RevitVersion)\revit_mcp_plugin\Commands\RevitMCPCommandSet\$(RevitVersion)&quot;&#xD;&#xA;xcopy /y &quot;$(ProjectDir)..\command.json&quot; &quot;$(AppData)\Autodesk\Revit\Addins\$(RevitVersion)\revit_mcp_plugin\Commands\RevitMCPCommandSet\&quot;" />
+	</Target>
 
 </Project>
