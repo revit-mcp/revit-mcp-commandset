@@ -3,6 +3,7 @@ using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Architecture;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPSDK.API.Interfaces;
+using RevitMCPCommandSet.Utils;
 
 namespace RevitMCPCommandSet.Services
 {
@@ -109,7 +110,7 @@ namespace RevitMCPCommandSet.Services
 #if REVIT2024_OR_GREATER
                         long gridId = grid.Id.Value;
 #else
-                        long gridId = grid.Id.IntegerValue;
+                        long gridId = ElementIdUtils.GetIdValue(grid.Id);
 #endif
 
                         createdGrids.Add(new GridCreationResult
@@ -165,7 +166,7 @@ namespace RevitMCPCommandSet.Services
 #if REVIT2024_OR_GREATER
                         long gridId = grid.Id.Value;
 #else
-                        long gridId = grid.Id.IntegerValue;
+                        long gridId = ElementIdUtils.GetIdValue(grid.Id);
 #endif
 
                         createdGrids.Add(new GridCreationResult
@@ -359,3 +360,5 @@ namespace RevitMCPCommandSet.Services
         public double Position { get; set; }
     }
 }
+
+

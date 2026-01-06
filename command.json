@@ -9,8 +9,58 @@
   },
   "commands": [
     {
-      "commandName": "say_hello",
-      "description": "Displays a greeting dialog",
+      "commandName": "ai_element_filter",
+      "description": "ai element filter",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "analyze_model_statistics",
+      "description": "Analyze model complexity with element counts by category, type, family, and level",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "color_splash",
+      "description": "color splash",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "create_dimensions",
+      "description": "create dimensions",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "create_grid",
+      "description": "Create grid system with smart spacing generation for project layout (alphabetic/numeric naming)",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "create_line_based_element",
+      "description": "Create line based element such as wall",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "create_point_based_element",
+      "description": "create point based element",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "create_structural_framing_system",
+      "description": "Create structural beam framing system with configurable spacing and direction",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "create_surface_based_element",
+      "description": "create surface based element",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "delete_element",
+      "description": "Deletes elements using ElementId",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "export_room_data",
+      "description": "Extract all rooms with detailed properties including area, volume, perimeter, and parameters",
       "assemblyPath": "RevitMCPCommandSet.dll"
     },
     {
@@ -29,50 +79,28 @@
       "assemblyPath": "RevitMCPCommandSet.dll"
     },
     {
-      "commandName": "create_Wall",
-      "description": "create a wall",
-      "assemblyPath": "RevitMCPCommandSet.dll"
-    },
-    {
-      "commandName": "delete_element",
-      "description": "Deletes elements using ElementId",
-      "assemblyPath": "RevitMCPCommandSet.dll"
-    },
-	{
-      "commandName": "tag_all_walls",
-      "description": "Tag all the walls in the model",
-      "assemblyPath": "RevitMCPCommandSet.dll"
-    },
-	{
-      "commandName": "create_line_based_element",
-      "description": "Create line based element such as wall",
-      "assemblyPath": "RevitMCPCommandSet.dll"
-    },
-	{
-      "commandName": "export_room_data",
-      "description": "Extract all rooms with detailed properties including area, volume, perimeter, and parameters",
-      "assemblyPath": "RevitMCPCommandSet.dll"
-    },
-	{
       "commandName": "get_material_quantities",
       "description": "Calculate material quantities and takeoffs with area and volume calculations per material",
       "assemblyPath": "RevitMCPCommandSet.dll"
     },
-	{
-      "commandName": "analyze_model_statistics",
-      "description": "Analyze model complexity with element counts by category, type, family, and level",
+    {
+      "commandName": "get_selected_elements",
+      "description": "get selected elements",
       "assemblyPath": "RevitMCPCommandSet.dll"
-    }
-,
-	{
-      "commandName": "create_grid",
-      "description": "Create grid system with smart spacing generation for project layout (alphabetic/numeric naming)",
+    },
+    {
+      "commandName": "operate_element",
+      "description": "operate element",
       "assemblyPath": "RevitMCPCommandSet.dll"
-    }
-,
-	{
-      "commandName": "create_structural_framing_system",
-      "description": "Create structural beam framing system with configurable spacing and direction",
+    },
+    {
+      "commandName": "send_code_to_revit",
+      "description": "send code to revit",
+      "assemblyPath": "RevitMCPCommandSet.dll"
+    },
+    {
+      "commandName": "tag_all_walls",
+      "description": "Tag all the walls in the model",
       "assemblyPath": "RevitMCPCommandSet.dll"
     }
   ]

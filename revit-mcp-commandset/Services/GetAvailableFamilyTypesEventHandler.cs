@@ -1,6 +1,7 @@
-﻿using Autodesk.Revit.UI;
+using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPSDK.API.Interfaces;
+using RevitMCPCommandSet.Utils;
 
 namespace RevitMCPCommandSet.Services
 {
@@ -67,7 +68,7 @@ namespace RevitMCPCommandSet.Services
 #if REVIT2024_OR_GREATER
                             var categoryId = et.Category?.Id.Value;
 #else
-                            var categoryId = et.Category?.Id.IntegerValue;
+                            var categoryId = ElementIdUtils.GetIdValue(et.Category?.Id);
 #endif
                             return categoryId != null && validCategoryIds.Contains((int)categoryId.Value);
                         });
@@ -111,7 +112,7 @@ namespace RevitMCPCommandSet.Services
 #if REVIT2024_OR_GREATER
                         FamilyTypeId = et.Id.Value,
 #else
-                        FamilyTypeId = et.Id.IntegerValue,
+                        FamilyTypeId = ElementIdUtils.GetIdValue(et.Id),
 #endif
                         UniqueId = et.UniqueId,
                         FamilyName = familyName,
@@ -137,3 +138,5 @@ namespace RevitMCPCommandSet.Services
         }
     }
 }
+
+

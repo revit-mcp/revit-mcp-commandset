@@ -2,6 +2,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.DataExtraction;
 using RevitMCPSDK.API.Interfaces;
+using RevitMCPCommandSet.Utils;
 
 namespace RevitMCPCommandSet.Services.DataExtraction
 {
@@ -89,7 +90,7 @@ namespace RevitMCPCommandSet.Services.DataExtraction
 #if REVIT2024_OR_GREATER
                                 MaterialId = matId.Value,
 #else
-                                MaterialId = matId.IntegerValue,
+                                MaterialId = ElementIdUtils.GetIdValue(matId),
 #endif
                                 MaterialName = material.Name,
                                 MaterialClass = material.MaterialClass
@@ -108,9 +109,9 @@ namespace RevitMCPCommandSet.Services.DataExtraction
                         {
                             materialData[matId].ElementIds.Add(element.Id.Value);
 #else
-                        if (!materialData[matId].ElementIds.Contains(element.Id.IntegerValue))
+                        if (!materialData[matId].ElementIds.Contains(ElementIdUtils.GetIdValue(element.Id)))
                         {
-                            materialData[matId].ElementIds.Add(element.Id.IntegerValue);
+                            materialData[matId].ElementIds.Add(ElementIdUtils.GetIdValue(element.Id));
 #endif
                             materialData[matId].ElementCount++;
                         }
@@ -152,3 +153,5 @@ namespace RevitMCPCommandSet.Services.DataExtraction
         }
     }
 }
+
+

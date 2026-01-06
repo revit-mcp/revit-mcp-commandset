@@ -3,6 +3,7 @@ using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.DataExtraction;
 using RevitMCPSDK.API.Interfaces;
+using RevitMCPCommandSet.Utils;
 
 namespace RevitMCPCommandSet.Services.DataExtraction
 {
@@ -57,7 +58,7 @@ namespace RevitMCPCommandSet.Services.DataExtraction
 #if REVIT2024_OR_GREATER
                         Id = room.Id.Value,
 #else
-                        Id = room.Id.IntegerValue,
+                        Id = ElementIdUtils.GetIdValue(room.Id),
 #endif
                         UniqueId = room.UniqueId,
                         Name = room.get_Parameter(BuiltInParameter.ROOM_NAME)?.AsString() ?? "",
@@ -107,3 +108,5 @@ namespace RevitMCPCommandSet.Services.DataExtraction
         }
     }
 }
+
+

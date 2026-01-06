@@ -1,6 +1,7 @@
-﻿using Autodesk.Revit.UI;
+using Autodesk.Revit.UI;
 using Newtonsoft.Json.Linq;
 using RevitMCPSDK.API.Interfaces;
+using RevitMCPCommandSet.Utils;
 
 namespace RevitMCPCommandSet.Services
 {
@@ -199,7 +200,7 @@ namespace RevitMCPCommandSet.Services
 #if REVIT2024_OR_GREATER
                             elementIds = elementIds.Select(id => id.Value.ToString()).ToList()
 #else
-                            elementIds = elementIds.Select(id => id.IntegerValue.ToString()).ToList()
+                            elementIds = elementIds.Select(id => ElementIdUtils.GetIdValue(id).ToString()).ToList()
 #endif
                         });
                     }
@@ -274,7 +275,7 @@ namespace RevitMCPCommandSet.Services
                         return "None";
 
                     Element element = doc.GetElement(id);
-                    return element?.Name ?? id.IntegerValue.ToString();
+                    return element?.Name ?? ElementIdUtils.GetIdValue(id).ToString();
 #endif
                 case StorageType.Integer:
 #if REVIT2022_OR_GREATER
@@ -465,3 +466,4 @@ namespace RevitMCPCommandSet.Services
         }
     }
 }
+

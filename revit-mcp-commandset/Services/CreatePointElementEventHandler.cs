@@ -1,4 +1,4 @@
-﻿using Autodesk.Revit.UI;
+using Autodesk.Revit.UI;
 using RevitMCPSDK.API.Interfaces;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPCommandSet.Utils;
@@ -70,7 +70,7 @@ namespace RevitMCPCommandSet.Services
                             {
                                 symbol = typeEle as FamilySymbol;
                                 // 获取symbol的Category对象并转换为BuiltInCategory枚举
-                                builtInCategory = (BuiltInCategory)symbol.Category.Id.IntegerValue;
+                                builtInCategory = (BuiltInCategory)ElementIdUtils.GetIdValue(symbol.Category.Id);
                             }
                         }
                     }
@@ -116,7 +116,7 @@ namespace RevitMCPCommandSet.Services
                                 doc.Regenerate();
                             }
 
-                            elementIds.Add(instance.Id.IntegerValue);
+                            elementIds.Add(ElementIdUtils.GetIdValue(instance.Id));
                         }
                         //doc.Refresh();
                         transaction.Commit();
@@ -164,3 +164,5 @@ namespace RevitMCPCommandSet.Services
 
     }
 }
+
+

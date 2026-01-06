@@ -1,6 +1,7 @@
-﻿using Autodesk.Revit.UI;
+using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPSDK.API.Interfaces;
+using RevitMCPCommandSet.Utils;
 
 namespace RevitMCPCommandSet.Services
 {
@@ -32,7 +33,7 @@ namespace RevitMCPCommandSet.Services
 #if REVIT2024_OR_GREATER
                     Id = (int)activeView.Id.Value,
 #else
-                    Id = activeView.Id.IntegerValue,
+                    Id = ElementIdUtils.GetIdValue(activeView.Id),
 #endif
                     UniqueId = activeView.UniqueId,
                     Name = activeView.Name,
@@ -59,3 +60,5 @@ namespace RevitMCPCommandSet.Services
         }
     }
 }
+
+

@@ -1,4 +1,4 @@
-﻿using Autodesk.Revit.UI;
+using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPSDK.API.Interfaces;
 using System;
@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RevitMCPCommandSet.Utils;
 
 namespace RevitMCPCommandSet.Services
 {
@@ -50,7 +51,7 @@ namespace RevitMCPCommandSet.Services
 #if REVIT2024_OR_GREATER
                     Id = element.Id.Value,
 #else
-                    Id = element.Id.IntegerValue,
+                    Id = ElementIdUtils.GetIdValue(element.Id),
 #endif
                     UniqueId = element.UniqueId,
                     Name = element.Name,
@@ -75,3 +76,5 @@ namespace RevitMCPCommandSet.Services
         }
     }
 }
+
+

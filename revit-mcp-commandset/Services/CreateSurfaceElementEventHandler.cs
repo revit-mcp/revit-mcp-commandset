@@ -1,4 +1,4 @@
-﻿using Autodesk.Revit.UI;
+using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPCommandSet.Utils;
 using RevitMCPSDK.API.Interfaces;
@@ -72,12 +72,12 @@ namespace RevitMCPCommandSet.Services
                             {
                                 symbol = typeEle as FamilySymbol;
                                 // 获取symbol的Category对象并转换为BuiltInCategory枚举
-                                builtInCategory = (BuiltInCategory)symbol.Category.Id.IntegerValue;
+                                builtInCategory = (BuiltInCategory)ElementIdUtils.GetIdValue(symbol.Category.Id);
                             }
                             else if (typeEle != null && typeEle is FloorType)
                             {
                                 floorType = typeEle as FloorType;
-                                builtInCategory = (BuiltInCategory)floorType.Category.Id.IntegerValue;
+                                builtInCategory = (BuiltInCategory)ElementIdUtils.GetIdValue(floorType.Category.Id);
                             }
                         }
                     }
@@ -146,7 +146,7 @@ namespace RevitMCPCommandSet.Services
                                 if (floor != null)
                                 {
                                     floor.get_Parameter(BuiltInParameter.FLOOR_HEIGHTABOVELEVEL_PARAM).Set(baseOffset);
-                                    elementIds.Add(floor.Id.IntegerValue);
+                                    elementIds.Add(ElementIdUtils.GetIdValue(floor.Id));
                                 }
                                 break;
                             default:
@@ -261,3 +261,5 @@ namespace RevitMCPCommandSet.Services
 
     }
 }
+
+

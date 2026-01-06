@@ -1,4 +1,4 @@
-﻿// 
+// 
 //                       RevitAPI-Solutions
 // Copyright (c) Duong Tran Quang (DTDucas) (baymax.contact@gmail.com)
 // 
@@ -25,6 +25,7 @@ using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Annotation;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPSDK.API.Interfaces;
+using RevitMCPCommandSet.Utils;
 
 namespace RevitMCPCommandSet.Services.AnnotationComponents;
 
@@ -187,7 +188,7 @@ public class CreateDimensionEventHandler : IExternalEventHandler, IWaitableExter
                             // Apply additional parameters
                             ApplyDimensionParameters(dimension, dimInfo);
 
-                            createdDimensionIds.Add(dimension.Id.IntegerValue);
+                            createdDimensionIds.Add(ElementIdUtils.GetIdValue(dimension.Id));
                         }
 
                         transaction.Commit();
@@ -454,3 +455,4 @@ public class CreateDimensionEventHandler : IExternalEventHandler, IWaitableExter
 
     #endregion
 }
+

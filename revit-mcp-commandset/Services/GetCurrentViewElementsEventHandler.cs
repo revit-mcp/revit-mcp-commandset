@@ -1,6 +1,7 @@
-﻿using Autodesk.Revit.UI;
+using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPSDK.API.Interfaces;
+using RevitMCPCommandSet.Utils;
 
 namespace RevitMCPCommandSet.Services
 {
@@ -138,7 +139,7 @@ namespace RevitMCPCommandSet.Services
 #if REVIT2024_OR_GREATER
                     Id = e.Id.Value,
 #else
-                    Id = e.Id.IntegerValue,
+                    Id = ElementIdUtils.GetIdValue(e.Id),
 #endif
                     UniqueId = e.UniqueId,
                     Name = e.Name,
@@ -151,7 +152,7 @@ namespace RevitMCPCommandSet.Services
 #if REVIT2024_OR_GREATER
                     ViewId = activeView.Id.Value,
 #else
-                    ViewId = activeView.Id.IntegerValue,
+                    ViewId = ElementIdUtils.GetIdValue(activeView.Id),
 #endif
                     ViewName = activeView.Name,
                     TotalElementsInView = new FilteredElementCollector(doc, activeView.Id).GetElementCount(),
@@ -178,7 +179,7 @@ namespace RevitMCPCommandSet.Services
 #if REVIT2024_OR_GREATER
             properties.Add("ElementId", element.Id.Value.ToString());
 #else
-            properties.Add("ElementId", element.Id.IntegerValue.ToString());
+            properties.Add("ElementId", ElementIdUtils.GetIdValue(element.Id).ToString());
 #endif
             if (element.Location != null)
             {
@@ -215,7 +216,7 @@ namespace RevitMCPCommandSet.Services
 #if REVIT2024_OR_GREATER
                         properties.Add(paramName, param.AsElementId().Value.ToString());
 #else
-                        properties.Add(paramName, param.AsElementId().IntegerValue.ToString());
+                        properties.Add(paramName, ElementIdUtils.GetIdValue(param.AsElementId()).ToString());
 #endif
                 }
             }
@@ -229,3 +230,5 @@ namespace RevitMCPCommandSet.Services
         }
     }
 }
+
+

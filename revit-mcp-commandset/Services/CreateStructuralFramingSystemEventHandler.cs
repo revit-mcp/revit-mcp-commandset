@@ -4,6 +4,7 @@ using Autodesk.Revit.UI;
 using RevitMCPCommandSet.Models.Common;
 using RevitMCPCommandSet.Models.Structure;
 using RevitMCPSDK.API.Interfaces;
+using RevitMCPCommandSet.Utils;
 
 namespace RevitMCPCommandSet.Services
 {
@@ -144,10 +145,10 @@ namespace RevitMCPCommandSet.Services
                         beamIdsList.Add(beamId.Value);
                     }
 #else
-                    long beamSystemId = beamSystem.Id.IntegerValue;
+                    long beamSystemId = ElementIdUtils.GetIdValue(beamSystem.Id);
                     foreach (ElementId beamId in beamIds)
                     {
-                        beamIdsList.Add(beamId.IntegerValue);
+                        beamIdsList.Add(ElementIdUtils.GetIdValue(beamId));
                     }
 #endif
 
@@ -479,3 +480,5 @@ namespace RevitMCPCommandSet.Services
         }
     }
 }
+
+
